@@ -28,6 +28,8 @@ import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { BookmarkNode } from '@/lib/bookmarks';
 import { ImportExportService } from '@/lib/import-export';
+import { ThemeToggle } from '@/components/ThemeToggle';
+import { SortDropdown, SortOption } from '@/components/SortDropdown';
 import { Plus, Settings, Download, Upload, Grid, List, Folder, Trash2, CheckSquare, FolderPlus } from 'lucide-react';
 
 export function BookmarkManager() {
@@ -36,6 +38,7 @@ export function BookmarkManager() {
     folders,
     isLoading,
     error,
+    skipAnimation,
     searchBookmarks,
     addBookmark,
     updateBookmark,
@@ -53,6 +56,7 @@ export function BookmarkManager() {
   const [selectedBookmarks, setSelectedBookmarks] = useState<Set<string>>(new Set());
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [isSelectionMode, setIsSelectionMode] = useState(false);
+  const [sortOption, setSortOption] = useState<SortOption>('date-added');
 
   const sensors = useSensors(
     useSensor(PointerSensor),
@@ -66,9 +70,49 @@ export function BookmarkManager() {
     : null;
 
   const currentSubfolders = currentFolderData?.children?.filter(child => !child.url) || [];
-  const filteredBookmarks = selectedFolder
+  const baseFilteredBookmarks = selectedFolder
     ? bookmarks.filter(bookmark => bookmark.parentId === selectedFolder)
     : bookmarks;
+
+  const sortBookmarks = (bookmarks: BookmarkNode[], sort: SortOption): BookmarkNode[] => {
+    const sorted = [...bookmarks];
+    
+    switch (sort) {
+      case 'title-asc':
+        return sorted.sort((a, b) => a.title.localeCompare(b.title));
+      case 'title-desc':
+        return sorted.sort((a, b) => b.title.localeCompare(a.title));
+      case 'domain-asc':
+        return sorted.sort((a, b) => {
+          const getDomain = (url?: string) => {
+            if (!url) return '';
+            try {
+              return new URL(url).hostname;
+            } catch {
+              return '';
+            }
+          };
+          return getDomain(a.url).localeCompare(getDomain(b.url));
+        });
+      case 'domain-desc':
+        return sorted.sort((a, b) => {
+          const getDomain = (url?: string) => {
+            if (!url) return '';
+            try {
+              return new URL(url).hostname;
+            } catch {
+              return '';
+            }
+          };
+          return getDomain(b.url).localeCompare(getDomain(a.url));
+        });
+      case 'date-added':
+      default:
+        return sorted.sort((a, b) => (b.dateAdded || 0) - (a.dateAdded || 0));
+    }
+  };
+
+  const filteredBookmarks = sortBookmarks(baseFilteredBookmarks, sortOption);
 
   const handleSearch = async (query: string) => {
     await searchBookmarks(query);
@@ -81,9 +125,7 @@ export function BookmarkManager() {
   };
 
   const handleDeleteBookmark = async (bookmark: BookmarkNode) => {
-    if (confirm(`Delete "${bookmark.title}"?`)) {
-      await removeBookmark(bookmark.id);
-    }
+    await removeBookmark(bookmark.id);
   };
 
   const handleAddBookmark = () => {
@@ -133,9 +175,26 @@ export function BookmarkManager() {
   };
 
   const handleDeleteFolder = async (folder: BookmarkNode) => {
-    if (confirm(`Delete folder "${folder.title}" and all its contents?`)) {
-      await removeBookmark(folder.id);
+    const hasContents = folder.children && folder.children.length > 0;
+    
+    if (hasContents) {
+      const bookmarkCount = folder.children?.filter(child => child.url).length || 0;
+      const folderCount = folder.children?.filter(child => !child.url).length || 0;
+      
+      const firstConfirm = confirm(
+        `This folder contains ${bookmarkCount} bookmarks and ${folderCount} subfolders. Are you sure you want to delete "${folder.title}"?`
+      );
+      
+      if (!firstConfirm) return;
+      
+      const secondConfirm = confirm(
+        `This action cannot be undone. All bookmarks and subfolders will be permanently deleted. Delete "${folder.title}"?`
+      );
+      
+      if (!secondConfirm) return;
     }
+    
+    await removeBookmark(folder.id);
   };
 
   const handleSaveFolder = async (folderData: { title: string; parentId?: string }) => {
@@ -189,13 +248,11 @@ export function BookmarkManager() {
   };
 
   const handleDeleteSelected = async () => {
-    if (confirm(`Delete ${selectedBookmarks.size} selected bookmarks?`)) {
-      for (const bookmarkId of selectedBookmarks) {
-        await removeBookmark(bookmarkId);
-      }
-      setSelectedBookmarks(new Set());
-      setIsSelectionMode(false);
+    for (const bookmarkId of selectedBookmarks) {
+      await removeBookmark(bookmarkId);
     }
+    setSelectedBookmarks(new Set());
+    setIsSelectionMode(false);
   };
 
   const handleExport = async () => {
@@ -349,6 +406,11 @@ export function BookmarkManager() {
                     </Button>
                   </div>
                   
+                  <SortDropdown
+                    currentSort={sortOption}
+                    onSortChange={setSortOption}
+                  />
+                  
                   <Button variant="outline" size="sm" onClick={handleImport}>
                     <Upload className="h-4 w-4 mr-2" />
                     Import
@@ -370,6 +432,8 @@ export function BookmarkManager() {
                   </Button>
                 </>
               )}
+              
+              <ThemeToggle />
             </div>
           </div>
           
@@ -426,11 +490,11 @@ export function BookmarkManager() {
                       </h3>
                       <div className={`${
                         viewMode === 'grid' 
-                          ? 'grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3' 
-                          : 'space-y-2'
+                          ? 'grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-2' 
+                          : 'space-y-1'
                       }`}>
                         {currentSubfolders.map((folder, index) => (
-                          <BlurFade key={folder.id} delay={index * 0.02}>
+                          <BlurFade key={folder.id} delay={skipAnimation ? 0 : index * 0.02}>
                             <FolderItem
                               folder={folder}
                               onFolderSelect={(folder) => handleFolderSelect(folder.id)}
@@ -454,11 +518,11 @@ export function BookmarkManager() {
                       )}
                       <div className={`${
                         viewMode === 'grid' 
-                          ? 'grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3' 
-                          : 'space-y-2'
+                          ? 'grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-2' 
+                          : 'space-y-1'
                       }`}>
                         {filteredBookmarks.map((bookmark, index) => (
-                          <BlurFade key={bookmark.id} delay={(currentSubfolders.length + index) * 0.02}>
+                          <BlurFade key={bookmark.id} delay={skipAnimation ? 0 : (currentSubfolders.length + index) * 0.02}>
                             <DraggableBookmarkItem
                               bookmark={bookmark}
                               onEdit={handleEditBookmark}

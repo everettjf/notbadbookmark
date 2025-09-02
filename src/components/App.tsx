@@ -8,6 +8,7 @@ import { BlurFade } from '@/components/ui/blur-fade';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { BookmarkNode } from '@/lib/bookmarks';
+import { ThemeToggle } from '@/components/ThemeToggle';
 import { Plus, Settings, Loader2, AlertCircle } from 'lucide-react';
 
 export function App() {
@@ -117,6 +118,7 @@ export function App() {
             <Button variant="ghost" size="icon" className="h-8 w-8 hover:bg-primary/10 transition-all duration-200">
               <Settings className="h-4 w-4" />
             </Button>
+            <ThemeToggle />
           </div>
         </div>
         <SearchBar onSearch={handleSearch} />

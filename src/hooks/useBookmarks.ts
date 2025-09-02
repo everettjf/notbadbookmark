@@ -6,6 +6,7 @@ export function useBookmarks() {
   const [folders, setFolders] = useState<BookmarkNode[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [skipAnimation, setSkipAnimation] = useState(false);
 
   const loadBookmarks = async () => {
     try {
@@ -60,19 +61,25 @@ export function useBookmarks() {
 
   const updateBookmark = async (id: string, changes: { title?: string; url?: string }) => {
     try {
+      setSkipAnimation(true);
       await BookmarkService.updateBookmark(id, changes);
       await loadBookmarks();
+      setTimeout(() => setSkipAnimation(false), 100);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to update bookmark');
+      setSkipAnimation(false);
     }
   };
 
   const removeBookmark = async (id: string) => {
     try {
+      setSkipAnimation(true);
       await BookmarkService.removeBookmark(id);
       await loadBookmarks();
+      setTimeout(() => setSkipAnimation(false), 100);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to remove bookmark');
+      setSkipAnimation(false);
     }
   };
 
@@ -97,6 +104,7 @@ export function useBookmarks() {
     folders,
     isLoading,
     error,
+    skipAnimation,
     searchBookmarks,
     addBookmark,
     updateBookmark,

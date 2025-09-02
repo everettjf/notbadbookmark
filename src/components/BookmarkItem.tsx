@@ -2,8 +2,14 @@ import React from 'react';
 import { motion } from 'framer-motion';
 import { BookmarkNode } from '@/lib/bookmarks';
 import { Card } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { ExternalLink, Edit, Trash2, Link, Share, GripVertical } from 'lucide-react';
+import {
+  ContextMenu,
+  ContextMenuContent,
+  ContextMenuItem,
+  ContextMenuSeparator,
+  ContextMenuTrigger,
+} from '@/components/ui/context-menu';
+import { Edit, Trash2, Link, Share, GripVertical } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 interface BookmarkItemProps {
@@ -41,99 +47,81 @@ export function BookmarkItem({ bookmark, onEdit, onDelete, onShare, className, i
       whileHover={{ scale: 1.01 }}
       whileTap={{ scale: 0.99 }}
     >
-      <Card className={cn("relative p-3 hover:bg-accent/50 group border transition-all duration-200", className)}>
-        <div className="flex items-center gap-3">
-        {isDragHandle && (
-          <div 
-            {...dragHandleProps}
-            className="flex-shrink-0 cursor-grab active:cursor-grabbing opacity-50 hover:opacity-100 transition-opacity"
-          >
-            <GripVertical className="h-4 w-4 text-muted-foreground" />
-          </div>
-        )}
+      <ContextMenu>
+        <ContextMenuTrigger asChild>
+          <Card className={cn("relative p-2 hover:bg-accent/50 group border transition-all duration-200", className)}>
+            <div className="flex items-center gap-2">
+              {isDragHandle && (
+                <div 
+                  {...dragHandleProps}
+                  className="flex-shrink-0 cursor-grab active:cursor-grabbing opacity-50 hover:opacity-100 transition-opacity"
+                >
+                  <GripVertical className="h-4 w-4 text-muted-foreground" />
+                </div>
+              )}
+              
+              <div className="flex-shrink-0">
+                <div className="w-6 h-6 rounded bg-blue-50 dark:bg-blue-950 flex items-center justify-center">
+                  {bookmark.url ? (
+                    <img
+                      src={getFavicon(bookmark.url)}
+                      alt=""
+                      className="w-3 h-3"
+                      onError={(e) => {
+                        const target = e.target as HTMLImageElement;
+                        target.style.display = 'none';
+                        target.nextElementSibling?.classList.remove('hidden');
+                      }}
+                    />
+                  ) : null}
+                  <Link className={`w-3 h-3 text-blue-600 dark:text-blue-400 ${bookmark.url ? 'hidden' : ''}`} />
+                </div>
+              </div>
+              
+              <div className="flex-1 min-w-0 cursor-pointer" onClick={openBookmark}>
+                <h3 className="font-medium text-sm truncate">{bookmark.title}</h3>
+                {bookmark.url && (
+                  <p className="text-xs text-muted-foreground truncate">
+                    {new URL(bookmark.url).hostname}
+                  </p>
+                )}
+              </div>
+            </div>
+          </Card>
+        </ContextMenuTrigger>
         
-        <div className="flex-shrink-0">
-          <div className="w-8 h-8 rounded-md bg-blue-50 dark:bg-blue-950 flex items-center justify-center">
-            {bookmark.url ? (
-              <img
-                src={getFavicon(bookmark.url)}
-                alt=""
-                className="w-4 h-4"
-                onError={(e) => {
-                  const target = e.target as HTMLImageElement;
-                  target.style.display = 'none';
-                  target.nextElementSibling?.classList.remove('hidden');
-                }}
-              />
-            ) : null}
-            <Link className={`w-4 h-4 text-blue-600 dark:text-blue-400 ${bookmark.url ? 'hidden' : ''}`} />
-          </div>
-        </div>
-        
-        <div className="flex-1 min-w-0 cursor-pointer" onClick={openBookmark}>
-          <h3 className="font-medium text-sm truncate">{bookmark.title}</h3>
-          {bookmark.url && (
-            <p className="text-xs text-muted-foreground truncate">
-              {new URL(bookmark.url).hostname}
-            </p>
-          )}
-        </div>
-
-        <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+        <ContextMenuContent className="w-48">
+          <ContextMenuItem onClick={() => openBookmark()}>
+            <Link className="h-4 w-4 mr-2" />
+            Open
+          </ContextMenuItem>
+          
           {bookmark.url && (
             <>
-              <Button
-                variant="ghost"
-                size="icon"
-                className="h-7 w-7"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  openBookmark();
-                }}
-              >
-                <ExternalLink className="h-3 w-3" />
-              </Button>
-              
-              <Button
-                variant="ghost"
-                size="icon"
-                className="h-7 w-7"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onShare?.(bookmark);
-                }}
-              >
-                <Share className="h-3 w-3" />
-              </Button>
+              <ContextMenuItem onClick={() => onShare?.(bookmark)}>
+                <Share className="h-4 w-4 mr-2" />
+                Share
+              </ContextMenuItem>
+              <ContextMenuSeparator />
             </>
           )}
           
-          <Button
-            variant="ghost"
-            size="icon"
-            className="h-7 w-7"
-            onClick={(e) => {
-              e.stopPropagation();
-              onEdit?.(bookmark);
-            }}
-          >
-            <Edit className="h-3 w-3" />
-          </Button>
+          <ContextMenuItem onClick={() => onEdit?.(bookmark)}>
+            <Edit className="h-4 w-4 mr-2" />
+            Edit
+          </ContextMenuItem>
           
-          <Button
-            variant="ghost"
-            size="icon"
-            className="h-7 w-7 text-destructive hover:text-destructive"
-            onClick={(e) => {
-              e.stopPropagation();
-              onDelete?.(bookmark);
-            }}
+          <ContextMenuSeparator />
+          
+          <ContextMenuItem 
+            onClick={() => onDelete?.(bookmark)}
+            className="text-destructive focus:text-destructive"
           >
-            <Trash2 className="h-3 w-3" />
-          </Button>
-        </div>
-      </div>
-      </Card>
+            <Trash2 className="h-4 w-4 mr-2" />
+            Delete
+          </ContextMenuItem>
+        </ContextMenuContent>
+      </ContextMenu>
     </motion.div>
   );
 }
