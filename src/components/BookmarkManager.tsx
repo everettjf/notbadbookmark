@@ -18,6 +18,7 @@ import {
 } from '@dnd-kit/sortable';
 import { useBookmarks } from '@/hooks/useBookmarks';
 import { DraggableBookmarkItem } from '@/components/DraggableBookmarkItem';
+import { FolderItem } from '@/components/FolderItem';
 import { SearchBar } from '@/components/SearchBar';
 import { BookmarkDialog } from '@/components/BookmarkDialog';
 import { FolderTree } from '@/components/FolderTree';
@@ -57,6 +58,11 @@ export function BookmarkManager() {
     })
   );
 
+  const currentFolderData = selectedFolder
+    ? folders.find(f => f.id === selectedFolder)
+    : null;
+
+  const currentSubfolders = currentFolderData?.children?.filter(child => !child.url) || [];
   const filteredBookmarks = selectedFolder
     ? bookmarks.filter(bookmark => bookmark.parentId === selectedFolder)
     : bookmarks;
@@ -314,11 +320,12 @@ export function BookmarkManager() {
             
             <div className="flex items-center gap-4">
               <div className="text-sm text-muted-foreground">
+                {currentSubfolders.length > 0 && `${currentSubfolders.length} folders • `}
                 {filteredBookmarks.length} bookmarks
                 {selectedFolder && ' in current folder'}
               </div>
               
-              {filteredBookmarks.length > 0 && !isSelectionMode && (
+              {(filteredBookmarks.length > 0 || currentSubfolders.length > 0) && !isSelectionMode && (
                 <Button
                   variant="ghost"
                   size="sm"
@@ -348,16 +355,67 @@ export function BookmarkManager() {
                 items={filteredBookmarks.map(b => b.id)}
                 strategy={viewMode === 'grid' ? rectSortingStrategy : verticalListSortingStrategy}
               >
-                <div className={`${
-                  viewMode === 'grid' 
-                    ? 'grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4' 
-                    : 'space-y-2'
-                }`}>
-                  {filteredBookmarks.length === 0 ? (
-                    <BlurFade delay={0.3} className="col-span-full">
+                <div className="space-y-6">
+                  {/* Subfolders Section */}
+                  {currentSubfolders.length > 0 && (
+                    <div>
+                      <h3 className="text-sm font-semibold text-muted-foreground mb-3 px-1">
+                        FOLDERS
+                      </h3>
+                      <div className={`${
+                        viewMode === 'grid' 
+                          ? 'grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3' 
+                          : 'space-y-2'
+                      }`}>
+                        {currentSubfolders.map((folder, index) => (
+                          <BlurFade key={folder.id} delay={index * 0.02}>
+                            <FolderItem
+                              folder={folder}
+                              onFolderSelect={(folder) => handleFolderSelect(folder.id)}
+                              className={viewMode === 'list' ? 'w-full' : ''}
+                            />
+                          </BlurFade>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Bookmarks Section */}
+                  {filteredBookmarks.length > 0 && (
+                    <div>
+                      {currentSubfolders.length > 0 && (
+                        <h3 className="text-sm font-semibold text-muted-foreground mb-3 px-1">
+                          BOOKMARKS
+                        </h3>
+                      )}
+                      <div className={`${
+                        viewMode === 'grid' 
+                          ? 'grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3' 
+                          : 'space-y-2'
+                      }`}>
+                        {filteredBookmarks.map((bookmark, index) => (
+                          <BlurFade key={bookmark.id} delay={(currentSubfolders.length + index) * 0.02}>
+                            <DraggableBookmarkItem
+                              bookmark={bookmark}
+                              onEdit={handleEditBookmark}
+                              onDelete={handleDeleteBookmark}
+                              className={viewMode === 'list' ? 'w-full' : ''}
+                              isSelected={selectedBookmarks.has(bookmark.id)}
+                              isSelectionMode={isSelectionMode}
+                              onToggleSelection={handleToggleSelection}
+                            />
+                          </BlurFade>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Empty State */}
+                  {filteredBookmarks.length === 0 && currentSubfolders.length === 0 && (
+                    <BlurFade delay={0.3}>
                       <Card className="p-12 text-center">
                         <div className="text-muted-foreground mb-4">
-                          {selectedFolder ? 'No bookmarks in this folder' : 'No bookmarks found'}
+                          {selectedFolder ? 'This folder is empty' : 'No bookmarks found'}
                         </div>
                         <Button onClick={handleAddBookmark}>
                           <Plus className="h-4 w-4 mr-2" />
@@ -365,20 +423,6 @@ export function BookmarkManager() {
                         </Button>
                       </Card>
                     </BlurFade>
-                  ) : (
-                    filteredBookmarks.map((bookmark, index) => (
-                      <BlurFade key={bookmark.id} delay={index * 0.02}>
-                        <DraggableBookmarkItem
-                          bookmark={bookmark}
-                          onEdit={handleEditBookmark}
-                          onDelete={handleDeleteBookmark}
-                          className={viewMode === 'list' ? 'w-full' : ''}
-                          isSelected={selectedBookmarks.has(bookmark.id)}
-                          isSelectionMode={isSelectionMode}
-                          onToggleSelection={handleToggleSelection}
-                        />
-                      </BlurFade>
-                    ))
                   )}
                 </div>
               </SortableContext>
