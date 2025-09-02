@@ -10,6 +10,7 @@ interface DraggableBookmarkItemProps {
   onEdit?: (bookmark: BookmarkNode) => void;
   onDelete?: (bookmark: BookmarkNode) => void;
   onShare?: (bookmark: BookmarkNode) => void;
+  onCopy?: (bookmark: BookmarkNode) => void;
   className?: string;
   isSelected?: boolean;
   isSelectionMode?: boolean;
@@ -21,6 +22,7 @@ export function DraggableBookmarkItem({
   onEdit, 
   onDelete, 
   onShare,
+  onCopy,
   className,
   isSelected = false,
   isSelectionMode = false,
@@ -71,6 +73,7 @@ export function DraggableBookmarkItem({
             onEdit={onEdit}
             onDelete={onDelete}
             onShare={onShare}
+            onCopy={onCopy}
             className={`${isDragging ? 'ring-2 ring-primary' : ''} ${
               isSelected ? 'ring-2 ring-primary bg-primary/5' : ''
             } ${isSelectionMode ? 'pl-8' : ''}`}

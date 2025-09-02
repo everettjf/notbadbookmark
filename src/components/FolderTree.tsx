@@ -1,13 +1,22 @@
 import React, { useState } from 'react';
 import { BookmarkNode } from '@/lib/bookmarks';
 import { Button } from '@/components/ui/button';
-import { ChevronRight, ChevronDown, Folder, FolderOpen } from 'lucide-react';
+import {
+  ContextMenu,
+  ContextMenuContent,
+  ContextMenuItem,
+  ContextMenuSeparator,
+  ContextMenuTrigger,
+} from '@/components/ui/context-menu';
+import { ChevronRight, ChevronDown, Folder, FolderOpen, Edit, Trash2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 interface FolderTreeProps {
   folders: BookmarkNode[];
   selectedFolder: string | null;
   onFolderSelect: (folderId: string | null) => void;
+  onEditFolder?: (folder: BookmarkNode) => void;
+  onDeleteFolder?: (folder: BookmarkNode) => void;
 }
 
 interface FolderItemProps {
@@ -17,6 +26,8 @@ interface FolderItemProps {
   onFolderSelect: (folderId: string | null) => void;
   expandedFolders: Set<string>;
   onToggleExpanded: (folderId: string) => void;
+  onEditFolder?: (folder: BookmarkNode) => void;
+  onDeleteFolder?: (folder: BookmarkNode) => void;
 }
 
 function FolderItem({ 
@@ -25,7 +36,9 @@ function FolderItem({
   selectedFolder, 
   onFolderSelect, 
   expandedFolders,
-  onToggleExpanded 
+  onToggleExpanded,
+  onEditFolder,
+  onDeleteFolder
 }: FolderItemProps) {
   const isExpanded = expandedFolders.has(folder.id);
   const isSelected = selectedFolder === folder.id;
@@ -44,43 +57,69 @@ function FolderItem({
 
   return (
     <div>
-      <Button
-        variant="ghost"
-        className={cn(
-          "w-full justify-start text-left font-normal h-auto py-2 px-2",
-          isSelected && "bg-accent text-accent-foreground",
-          "hover:bg-accent/50"
-        )}
-        style={{ paddingLeft: `${0.5 + level * 0.75}rem` }}
-        onClick={handleClick}
-      >
-        <div className="flex items-center gap-2 w-full">
-          {hasChildren ? (
-            <Button
-              variant="ghost"
-              size="icon"
-              className="h-4 w-4 p-0 hover:bg-transparent"
-              onClick={handleToggle}
-            >
-              {isExpanded ? (
-                <ChevronDown className="h-3 w-3" />
+      <ContextMenu>
+        <ContextMenuTrigger asChild>
+          <Button
+            variant="ghost"
+            className={cn(
+              "w-full justify-start text-left font-normal h-auto py-2 px-2",
+              isSelected && "bg-accent text-accent-foreground",
+              "hover:bg-accent/50"
+            )}
+            style={{ paddingLeft: `${0.5 + level * 0.75}rem` }}
+            onClick={handleClick}
+          >
+            <div className="flex items-center gap-2 w-full">
+              {hasChildren ? (
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-4 w-4 p-0 hover:bg-transparent"
+                  onClick={handleToggle}
+                >
+                  {isExpanded ? (
+                    <ChevronDown className="h-3 w-3" />
+                  ) : (
+                    <ChevronRight className="h-3 w-3" />
+                  )}
+                </Button>
               ) : (
-                <ChevronRight className="h-3 w-3" />
+                <div className="w-4" />
               )}
-            </Button>
-          ) : (
-            <div className="w-4" />
-          )}
+              
+              {isExpanded && hasChildren ? (
+                <FolderOpen className="h-4 w-4 text-muted-foreground" />
+              ) : (
+                <Folder className="h-4 w-4 text-muted-foreground" />
+              )}
+              
+              <span className="truncate flex-1 text-sm">{folder.title}</span>
+            </div>
+          </Button>
+        </ContextMenuTrigger>
+        
+        <ContextMenuContent className="w-48">
+          <ContextMenuItem onClick={handleClick}>
+            <Folder className="h-4 w-4 mr-2" />
+            Open Folder
+          </ContextMenuItem>
           
-          {isExpanded && hasChildren ? (
-            <FolderOpen className="h-4 w-4 text-muted-foreground" />
-          ) : (
-            <Folder className="h-4 w-4 text-muted-foreground" />
-          )}
+          <ContextMenuSeparator />
           
-          <span className="truncate flex-1 text-sm">{folder.title}</span>
-        </div>
-      </Button>
+          <ContextMenuItem onClick={() => onEditFolder?.(folder)}>
+            <Edit className="h-4 w-4 mr-2" />
+            Rename
+          </ContextMenuItem>
+          
+          <ContextMenuItem 
+            onClick={() => onDeleteFolder?.(folder)}
+            className="text-destructive focus:text-destructive"
+          >
+            <Trash2 className="h-4 w-4 mr-2" />
+            Delete
+          </ContextMenuItem>
+        </ContextMenuContent>
+      </ContextMenu>
 
       {hasChildren && isExpanded && folder.children && (
         <div>
@@ -95,6 +134,8 @@ function FolderItem({
                 onFolderSelect={onFolderSelect}
                 expandedFolders={expandedFolders}
                 onToggleExpanded={onToggleExpanded}
+                onEditFolder={onEditFolder}
+                onDeleteFolder={onDeleteFolder}
               />
             ))}
         </div>
@@ -103,7 +144,7 @@ function FolderItem({
   );
 }
 
-export function FolderTree({ folders, selectedFolder, onFolderSelect }: FolderTreeProps) {
+export function FolderTree({ folders, selectedFolder, onFolderSelect, onEditFolder, onDeleteFolder }: FolderTreeProps) {
   const [expandedFolders, setExpandedFolders] = useState<Set<string>>(new Set(['1', '2'])); // Default open Bookmarks Bar and Other Bookmarks
 
   const handleToggleExpanded = (folderId: string) => {
@@ -145,6 +186,8 @@ export function FolderTree({ folders, selectedFolder, onFolderSelect }: FolderTr
               onFolderSelect={onFolderSelect}
               expandedFolders={expandedFolders}
               onToggleExpanded={handleToggleExpanded}
+              onEditFolder={onEditFolder}
+              onDeleteFolder={onDeleteFolder}
             />
           ))}
       </div>

@@ -56,7 +56,7 @@ export function BookmarkManager() {
   const [selectedBookmarks, setSelectedBookmarks] = useState<Set<string>>(new Set());
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [isSelectionMode, setIsSelectionMode] = useState(false);
-  const [sortOption, setSortOption] = useState<SortOption>('date-added');
+  const [sortOption, setSortOption] = useState<SortOption>('newest-first');
 
   const sensors = useSensors(
     useSensor(PointerSensor),
@@ -106,9 +106,11 @@ export function BookmarkManager() {
           };
           return getDomain(b.url).localeCompare(getDomain(a.url));
         });
-      case 'date-added':
+      case 'newest-first':
       default:
         return sorted.sort((a, b) => (b.dateAdded || 0) - (a.dateAdded || 0));
+      case 'oldest-first':
+        return sorted.sort((a, b) => (a.dateAdded || 0) - (b.dateAdded || 0));
     }
   };
 
@@ -165,6 +167,17 @@ export function BookmarkManager() {
         // Fallback to clipboard
         await navigator.clipboard.writeText(bookmark.url);
         alert('Bookmark URL copied to clipboard!');
+      }
+    }
+  };
+
+  const handleCopyBookmark = async (bookmark: BookmarkNode) => {
+    if (bookmark.url) {
+      try {
+        await navigator.clipboard.writeText(bookmark.url);
+        alert('Bookmark URL copied to clipboard!');
+      } catch (error) {
+        console.error('Failed to copy URL:', error);
       }
     }
   };
@@ -337,6 +350,8 @@ export function BookmarkManager() {
               folders={folders}
               selectedFolder={selectedFolder}
               onFolderSelect={handleFolderSelect}
+              onEditFolder={handleEditFolder}
+              onDeleteFolder={handleDeleteFolder}
             />
           </div>
         </motion.div>
@@ -528,6 +543,7 @@ export function BookmarkManager() {
                               onEdit={handleEditBookmark}
                               onDelete={handleDeleteBookmark}
                               onShare={handleShareBookmark}
+                              onCopy={handleCopyBookmark}
                               className={viewMode === 'list' ? 'w-full' : ''}
                               isSelected={selectedBookmarks.has(bookmark.id)}
                               isSelectionMode={isSelectionMode}

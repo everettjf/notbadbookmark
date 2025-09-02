@@ -9,7 +9,7 @@ import {
   ContextMenuSeparator,
   ContextMenuTrigger,
 } from '@/components/ui/context-menu';
-import { Edit, Trash2, Link, Share, GripVertical } from 'lucide-react';
+import { Edit, Trash2, Link, Share, Copy, GripVertical } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 interface BookmarkItemProps {
@@ -17,12 +17,13 @@ interface BookmarkItemProps {
   onEdit?: (bookmark: BookmarkNode) => void;
   onDelete?: (bookmark: BookmarkNode) => void;
   onShare?: (bookmark: BookmarkNode) => void;
+  onCopy?: (bookmark: BookmarkNode) => void;
   className?: string;
   isDragHandle?: boolean;
   dragHandleProps?: any;
 }
 
-export function BookmarkItem({ bookmark, onEdit, onDelete, onShare, className, isDragHandle, dragHandleProps }: BookmarkItemProps) {
+export function BookmarkItem({ bookmark, onEdit, onDelete, onShare, onCopy, className, isDragHandle, dragHandleProps }: BookmarkItemProps) {
   const openBookmark = () => {
     if (bookmark.url) {
       chrome.tabs.create({ url: bookmark.url });
@@ -98,10 +99,16 @@ export function BookmarkItem({ bookmark, onEdit, onDelete, onShare, className, i
           
           {bookmark.url && (
             <>
+              <ContextMenuItem onClick={() => onCopy?.(bookmark)}>
+                <Copy className="h-4 w-4 mr-2" />
+                Copy URL
+              </ContextMenuItem>
+              
               <ContextMenuItem onClick={() => onShare?.(bookmark)}>
                 <Share className="h-4 w-4 mr-2" />
                 Share
               </ContextMenuItem>
+              
               <ContextMenuSeparator />
             </>
           )}

@@ -8,7 +8,7 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { ArrowUpDown, ArrowUpAZ, ArrowDownAZ } from 'lucide-react';
 
-export type SortOption = 'title-asc' | 'title-desc' | 'domain-asc' | 'domain-desc' | 'date-added';
+export type SortOption = 'title-asc' | 'title-desc' | 'domain-asc' | 'domain-desc' | 'newest-first' | 'oldest-first';
 
 interface SortDropdownProps {
   currentSort: SortOption;
@@ -22,7 +22,8 @@ export function SortDropdown({ currentSort, onSortChange }: SortDropdownProps) {
       case 'title-desc': return 'Title Z-A';
       case 'domain-asc': return 'Domain A-Z';
       case 'domain-desc': return 'Domain Z-A';
-      case 'date-added': return 'Date Added';
+      case 'newest-first': return 'Newest First';
+      case 'oldest-first': return 'Oldest First';
       default: return 'Sort';
     }
   };
@@ -52,9 +53,13 @@ export function SortDropdown({ currentSort, onSortChange }: SortDropdownProps) {
           <ArrowDownAZ className="mr-2 h-4 w-4" />
           <span>Domain Z-A</span>
         </DropdownMenuItem>
-        <DropdownMenuItem onClick={() => onSortChange('date-added')}>
+        <DropdownMenuItem onClick={() => onSortChange('newest-first')}>
           <ArrowUpDown className="mr-2 h-4 w-4" />
-          <span>Date Added</span>
+          <span>Newest First</span>
+        </DropdownMenuItem>
+        <DropdownMenuItem onClick={() => onSortChange('oldest-first')}>
+          <ArrowUpDown className="mr-2 h-4 w-4" />
+          <span>Oldest First</span>
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>
