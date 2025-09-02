@@ -3,6 +3,7 @@ const path = require('path');
 module.exports = {
   entry: {
     popup: './src/popup.tsx',
+    bookmarks: './src/bookmarks.tsx',
     background: './src/background.ts'
   },
   output: {

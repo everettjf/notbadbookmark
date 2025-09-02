@@ -15,6 +15,9 @@
   "background": {
     "service_worker": "dist/background.js"
   },
+  "chrome_url_overrides": {
+    "bookmarks": "bookmarks.html"
+  },
   "content_security_policy": {
     "extension_pages": "script-src 'self'; object-src 'self'"
   },
