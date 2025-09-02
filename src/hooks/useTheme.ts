@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 
 type BaseTheme = 'light' | 'dark' | 'system';
-type ThemeVariant = 'default' | 'blue' | 'green';
+type ThemeVariant = 'default' | 'blue' | 'green' | 'purple' | 'orange' | 'pink';
 type Theme = `${BaseTheme}-${ThemeVariant}` | BaseTheme;
 
 export function useTheme() {
@@ -46,7 +46,7 @@ export function useTheme() {
     const root = document.documentElement;
     
     // Remove all theme classes
-    root.classList.remove('dark', 'theme-default', 'theme-blue', 'theme-green');
+    root.classList.remove('dark', 'theme-default', 'theme-blue', 'theme-green', 'theme-purple', 'theme-orange', 'theme-pink');
     
     // Add dark class if needed
     if (resolvedTheme === 'dark') {

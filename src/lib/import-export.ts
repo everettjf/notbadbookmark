@@ -25,7 +25,9 @@ export class ImportExportService {
       let mimeType: string;
       let fileExtension: string;
       
-      const bookmarks = await BookmarkService.getAllBookmarks();
+      const bookmarkTree = await BookmarkService.getAllBookmarks();
+      const allBookmarksFlat = BookmarkService.flattenBookmarks(bookmarkTree);
+      const validBookmarksOnly = allBookmarksFlat.filter(b => b.url); // Only include actual bookmarks, not folders
       const dateStr = new Date().toISOString().split('T')[0];
       
       switch (format) {
@@ -33,7 +35,7 @@ export class ImportExportService {
           const exportData: BookmarkExport = {
             version: '1.0.0',
             exportDate: new Date().toISOString(),
-            bookmarks: bookmarks
+            bookmarks: validBookmarksOnly
           };
           content = JSON.stringify(exportData, null, 2);
           mimeType = 'application/json';
@@ -41,13 +43,13 @@ export class ImportExportService {
           break;
           
         case 'html':
-          content = this.exportToHTML(bookmarks);
+          content = this.exportToHTML(validBookmarksOnly);
           mimeType = 'text/html';
           fileExtension = 'html';
           break;
           
         case 'markdown':
-          content = this.exportToMarkdown(bookmarks);
+          content = this.exportToMarkdown(validBookmarksOnly);
           mimeType = 'text/markdown';
           fileExtension = 'md';
           break;

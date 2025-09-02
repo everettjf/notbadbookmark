@@ -362,13 +362,13 @@ export function BookmarkManager() {
       <div className="flex-1 flex flex-col">
         {/* Header */}
         <motion.div
-          className="p-6 border-b bg-gradient-to-r from-card to-card/80"
+          className="py-1 px-3 border-b bg-gradient-to-r from-card to-card/80"
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5 }}
         >
-          <div className="flex items-center justify-between mb-4">
-            <div className="flex items-center gap-4">
+          <div className="flex items-center justify-between mb-1">
+            <div className="flex items-center gap-3">
               <Button
                 variant="ghost"
                 size="icon"
@@ -381,33 +381,35 @@ export function BookmarkManager() {
               </h1>
             </div>
             
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-1">
               {isSelectionMode && (
                 <>
                   <Button 
                     variant="outline" 
                     size="sm" 
+                    className="h-7 px-2 text-xs"
                     onClick={() => {
                       setSelectedBookmarks(new Set());
                       setIsSelectionMode(false);
                     }}
                   >
-                    <X className="h-4 w-4 mr-2" />
+                    <X className="h-3 w-3 mr-1" />
                     Cancel
                   </Button>
                   
-                  <Button variant="outline" size="sm" onClick={handleSelectAll}>
-                    <CheckSquare className="h-4 w-4 mr-2" />
+                  <Button variant="outline" size="sm" className="h-7 px-2 text-xs" onClick={handleSelectAll}>
+                    <CheckSquare className="h-3 w-3 mr-1" />
                     {selectedBookmarks.size === filteredBookmarks.length ? 'Deselect All' : 'Select All'}
                   </Button>
                   
                   <Button 
                     variant="destructive" 
                     size="sm" 
+                    className="h-7 px-2 text-xs"
                     onClick={handleDeleteSelected}
                     disabled={selectedBookmarks.size === 0}
                   >
-                    <Trash2 className="h-4 w-4 mr-2" />
+                    <Trash2 className="h-3 w-3 mr-1" />
                     Delete ({selectedBookmarks.size})
                   </Button>
                 </>
@@ -420,17 +422,17 @@ export function BookmarkManager() {
                       variant={viewMode === 'grid' ? 'default' : 'ghost'}
                       size="sm"
                       onClick={() => setViewMode('grid')}
-                      className="rounded-r-none"
+                      className="rounded-r-none h-7 px-2"
                     >
-                      <Grid className="h-4 w-4" />
+                      <Grid className="h-3 w-3" />
                     </Button>
                     <Button
                       variant={viewMode === 'list' ? 'default' : 'ghost'}
                       size="sm"
                       onClick={() => setViewMode('list')}
-                      className="rounded-l-none"
+                      className="rounded-l-none h-7 px-2"
                     >
-                      <List className="h-4 w-4" />
+                      <List className="h-3 w-3" />
                     </Button>
                   </div>
                   
@@ -439,20 +441,20 @@ export function BookmarkManager() {
                     onSortChange={setSortOption}
                   />
                   
-                  <Button variant="outline" size="sm" onClick={handleImport}>
-                    <Upload className="h-4 w-4 mr-2" />
+                  <Button variant="outline" size="sm" className="h-7 px-2 text-xs" onClick={handleImport}>
+                    <Upload className="h-3 w-3 mr-1" />
                     Import
                   </Button>
                   
                   <ExportDropdown onExport={handleExport} />
                   
-                  <Button variant="outline" onClick={handleAddFolder}>
-                    <FolderPlus className="h-4 w-4 mr-2" />
+                  <Button variant="outline" className="h-7 px-2 text-xs" onClick={handleAddFolder}>
+                    <FolderPlus className="h-3 w-3 mr-1" />
                     Add Folder
                   </Button>
                   
-                  <Button onClick={handleAddBookmark}>
-                    <Plus className="h-4 w-4 mr-2" />
+                  <Button className="h-7 px-2 text-xs" onClick={handleAddBookmark}>
+                    <Plus className="h-3 w-3 mr-1" />
                     Add Bookmark
                   </Button>
                 </>
@@ -462,14 +464,14 @@ export function BookmarkManager() {
             </div>
           </div>
           
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-3">
             <SearchBar 
               onSearch={handleSearch} 
               className="flex-1 max-w-md"
               placeholder="Search bookmarks and folders..."
             />
             
-            <div className="flex items-center gap-4">
+            <div className="flex items-center gap-3">
               <div className="text-sm text-muted-foreground">
                 {currentSubfolders.length > 0 && `${currentSubfolders.length} folders • `}
                 {filteredBookmarks.length} bookmarks
@@ -480,9 +482,10 @@ export function BookmarkManager() {
                 <Button
                   variant="ghost"
                   size="sm"
+                  className="h-7 px-2 text-xs"
                   onClick={() => setIsSelectionMode(true)}
                 >
-                  <CheckSquare className="h-4 w-4 mr-2" />
+                  <CheckSquare className="h-3 w-3 mr-1" />
                   Select
                 </Button>
               )}
@@ -491,7 +494,7 @@ export function BookmarkManager() {
         </motion.div>
 
         {/* Content Area */}
-        <div className="flex-1 overflow-auto p-6">
+        <div className="flex-1 overflow-auto pt-2 px-3 pb-4">
           {isLoading ? (
             <div className="flex items-center justify-center h-64">
               <div className="text-muted-foreground">Loading bookmarks...</div>
@@ -506,11 +509,11 @@ export function BookmarkManager() {
                 items={filteredBookmarks.map(b => b.id)}
                 strategy={viewMode === 'grid' ? rectSortingStrategy : verticalListSortingStrategy}
               >
-                <div className="space-y-6">
+                <div className="space-y-3">
                   {/* Subfolders Section */}
                   {currentSubfolders.length > 0 && (
                     <div>
-                      <h3 className="text-sm font-semibold text-muted-foreground mb-3 px-1">
+                      <h3 className="text-sm font-semibold text-muted-foreground mb-2 px-1">
                         FOLDERS
                       </h3>
                       <div className={`${
@@ -519,7 +522,7 @@ export function BookmarkManager() {
                           : 'space-y-1'
                       }`}>
                         {currentSubfolders.map((folder, index) => (
-                          <BlurFade key={folder.id} delay={skipAnimation ? 0 : index * 0.02}>
+                          <BlurFade key={folder.id} delay={skipAnimation ? 0 : index * 0.01}>
                             <FolderItem
                               folder={folder}
                               onFolderSelect={(folder) => handleFolderSelect(folder.id)}
@@ -537,7 +540,7 @@ export function BookmarkManager() {
                   {filteredBookmarks.length > 0 && (
                     <div>
                       {currentSubfolders.length > 0 && (
-                        <h3 className="text-sm font-semibold text-muted-foreground mb-3 px-1">
+                        <h3 className="text-sm font-semibold text-muted-foreground mb-2 px-1">
                           BOOKMARKS
                         </h3>
                       )}
@@ -547,7 +550,7 @@ export function BookmarkManager() {
                           : 'space-y-1'
                       }`}>
                         {filteredBookmarks.map((bookmark, index) => (
-                          <BlurFade key={bookmark.id} delay={skipAnimation ? 0 : (currentSubfolders.length + index) * 0.02}>
+                          <BlurFade key={bookmark.id} delay={skipAnimation ? 0 : (currentSubfolders.length + index) * 0.01}>
                             <DraggableBookmarkItem
                               bookmark={bookmark}
                               onEdit={handleEditBookmark}
@@ -567,7 +570,7 @@ export function BookmarkManager() {
 
                   {/* Empty State */}
                   {filteredBookmarks.length === 0 && currentSubfolders.length === 0 && (
-                    <BlurFade delay={0.3}>
+                    <BlurFade delay={0.1}>
                       <Card className="p-12 text-center">
                         <div className="text-muted-foreground mb-4">
                           {selectedFolder ? 'This folder is empty' : 'No bookmarks found'}

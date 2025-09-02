@@ -16,8 +16,8 @@ export function ExportDropdown({ onExport }: ExportDropdownProps) {
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <Button variant="outline" size="sm">
-          <Download className="h-4 w-4 mr-2" />
+        <Button variant="outline" size="sm" className="h-7 px-2 text-xs">
+          <Download className="h-3 w-3 mr-1" />
           Export
         </Button>
       </DropdownMenuTrigger>

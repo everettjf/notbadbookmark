@@ -31,8 +31,8 @@ export function SortDropdown({ currentSort, onSortChange }: SortDropdownProps) {
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <Button variant="outline" size="sm">
-          <ArrowUpDown className="h-4 w-4 mr-2" />
+        <Button variant="outline" size="sm" className="h-7 px-2 text-xs">
+          <ArrowUpDown className="h-3 w-3 mr-1" />
           {getSortLabel(currentSort)}
         </Button>
       </DropdownMenuTrigger>

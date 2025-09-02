@@ -8,7 +8,8 @@
       "Bash(npm install:*)",
       "Bash(convert:*)",
       "Bash(node:*)",
-      "Bash(rm:*)"
+      "Bash(rm:*)",
+      "Bash(open:*)"
     ],
     "deny": []
   }
