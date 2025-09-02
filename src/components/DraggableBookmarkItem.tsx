@@ -79,6 +79,8 @@ export function DraggableBookmarkItem({
             } ${isSelectionMode ? 'pl-8' : ''}`}
             isDragHandle={!isSelectionMode}
             dragHandleProps={isSelectionMode ? {} : { ...attributes, ...listeners }}
+            isSelectionMode={isSelectionMode}
+            onToggleSelection={onToggleSelection}
           />
         </div>
       </div>

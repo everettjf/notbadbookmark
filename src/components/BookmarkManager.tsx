@@ -30,7 +30,8 @@ import { BookmarkNode } from '@/lib/bookmarks';
 import { ImportExportService } from '@/lib/import-export';
 import { ThemeToggle } from '@/components/ThemeToggle';
 import { SortDropdown, SortOption } from '@/components/SortDropdown';
-import { Plus, Settings, Download, Upload, Grid, List, Folder, Trash2, CheckSquare, FolderPlus } from 'lucide-react';
+import { ExportDropdown } from '@/components/ExportDropdown';
+import { Plus, Settings, Download, Upload, Grid, List, Folder, Trash2, CheckSquare, FolderPlus, X } from 'lucide-react';
 
 export function BookmarkManager() {
   const {
@@ -268,9 +269,9 @@ export function BookmarkManager() {
     setIsSelectionMode(false);
   };
 
-  const handleExport = async () => {
+  const handleExport = async (format: 'json' | 'html' | 'markdown') => {
     try {
-      await ImportExportService.downloadBookmarks();
+      await ImportExportService.downloadBookmarks(format);
     } catch (error) {
       alert('Export failed: ' + (error instanceof Error ? error.message : 'Unknown error'));
     }
@@ -383,6 +384,18 @@ export function BookmarkManager() {
             <div className="flex items-center gap-2">
               {isSelectionMode && (
                 <>
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    onClick={() => {
+                      setSelectedBookmarks(new Set());
+                      setIsSelectionMode(false);
+                    }}
+                  >
+                    <X className="h-4 w-4 mr-2" />
+                    Cancel
+                  </Button>
+                  
                   <Button variant="outline" size="sm" onClick={handleSelectAll}>
                     <CheckSquare className="h-4 w-4 mr-2" />
                     {selectedBookmarks.size === filteredBookmarks.length ? 'Deselect All' : 'Select All'}
@@ -431,10 +444,7 @@ export function BookmarkManager() {
                     Import
                   </Button>
                   
-                  <Button variant="outline" size="sm" onClick={handleExport}>
-                    <Download className="h-4 w-4 mr-2" />
-                    Export
-                  </Button>
+                  <ExportDropdown onExport={handleExport} />
                   
                   <Button variant="outline" onClick={handleAddFolder}>
                     <FolderPlus className="h-4 w-4 mr-2" />

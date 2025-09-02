@@ -19,15 +19,46 @@ export class ImportExportService {
     return JSON.stringify(exportData, null, 2);
   }
 
-  static async downloadBookmarks(): Promise<void> {
+  static async downloadBookmarks(format: 'json' | 'html' | 'markdown' = 'json'): Promise<void> {
     try {
-      const exportData = await this.exportBookmarks();
-      const blob = new Blob([exportData], { type: 'application/json' });
+      let content: string;
+      let mimeType: string;
+      let fileExtension: string;
+      
+      const bookmarks = await BookmarkService.getAllBookmarks();
+      const dateStr = new Date().toISOString().split('T')[0];
+      
+      switch (format) {
+        case 'json':
+          const exportData: BookmarkExport = {
+            version: '1.0.0',
+            exportDate: new Date().toISOString(),
+            bookmarks: bookmarks
+          };
+          content = JSON.stringify(exportData, null, 2);
+          mimeType = 'application/json';
+          fileExtension = 'json';
+          break;
+          
+        case 'html':
+          content = this.exportToHTML(bookmarks);
+          mimeType = 'text/html';
+          fileExtension = 'html';
+          break;
+          
+        case 'markdown':
+          content = this.exportToMarkdown(bookmarks);
+          mimeType = 'text/markdown';
+          fileExtension = 'md';
+          break;
+      }
+      
+      const blob = new Blob([content], { type: mimeType });
       const url = URL.createObjectURL(blob);
       
       const a = document.createElement('a');
       a.href = url;
-      a.download = `bookmarks-${new Date().toISOString().split('T')[0]}.json`;
+      a.download = `bookmarks-${dateStr}.${fileExtension}`;
       document.body.appendChild(a);
       a.click();
       document.body.removeChild(a);
@@ -132,5 +163,66 @@ export class ImportExportService {
       reader.onerror = () => reject(new Error('Failed to read file'));
       reader.readAsText(file);
     });
+  }
+
+  static exportToHTML(bookmarks: BookmarkNode[]): string {
+    const timestamp = new Date().toLocaleString();
+    
+    let html = `<!DOCTYPE NETSCAPE-Bookmark-file-1>
+<META HTTP-EQUIV="Content-Type" CONTENT="text/html; charset=UTF-8">
+<TITLE>Bookmarks</TITLE>
+<H1>Bookmarks</H1>
+<DL><p>
+<DT><H3>NotBadBookmark Export - ${timestamp}</H3>
+<DL><p>
+`;
+
+    bookmarks.forEach(bookmark => {
+      if (bookmark.url) {
+        const addedDate = bookmark.dateAdded ? Math.floor(bookmark.dateAdded / 1000) : '';
+        html += `<DT><A HREF="${bookmark.url}"${addedDate ? ` ADD_DATE="${addedDate}"` : ''}>${bookmark.title}</A>\n`;
+      }
+    });
+
+    html += `</DL><p>
+</DL><p>`;
+
+    return html;
+  }
+
+  static exportToMarkdown(bookmarks: BookmarkNode[]): string {
+    const timestamp = new Date().toLocaleString();
+    
+    let markdown = `# NotBadBookmark Export\n\nExported on: ${timestamp}\n\n`;
+    
+    const bookmarksByDomain = new Map<string, BookmarkNode[]>();
+    
+    bookmarks.forEach(bookmark => {
+      if (bookmark.url) {
+        try {
+          const domain = new URL(bookmark.url).hostname;
+          if (!bookmarksByDomain.has(domain)) {
+            bookmarksByDomain.set(domain, []);
+          }
+          bookmarksByDomain.get(domain)!.push(bookmark);
+        } catch {
+          const unknown = 'Unknown';
+          if (!bookmarksByDomain.has(unknown)) {
+            bookmarksByDomain.set(unknown, []);
+          }
+          bookmarksByDomain.get(unknown)!.push(bookmark);
+        }
+      }
+    });
+
+    Array.from(bookmarksByDomain.keys()).sort().forEach(domain => {
+      markdown += `## ${domain}\n\n`;
+      bookmarksByDomain.get(domain)!.forEach(bookmark => {
+        markdown += `- [${bookmark.title}](${bookmark.url})\n`;
+      });
+      markdown += '\n';
+    });
+
+    return markdown;
   }
 }

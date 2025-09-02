@@ -1,6 +1,8 @@
 import { useState, useEffect } from 'react';
 
-type Theme = 'light' | 'dark' | 'system';
+type BaseTheme = 'light' | 'dark' | 'system';
+type ThemeVariant = 'default' | 'blue' | 'green';
+type Theme = `${BaseTheme}-${ThemeVariant}` | BaseTheme;
 
 export function useTheme() {
   const [theme, setTheme] = useState<Theme>(() => {
@@ -9,14 +11,26 @@ export function useTheme() {
   });
 
   const [resolvedTheme, setResolvedTheme] = useState<'light' | 'dark'>('light');
+  const [themeVariant, setThemeVariant] = useState<ThemeVariant>('default');
 
   useEffect(() => {
+    const parseTheme = (themeStr: Theme) => {
+      if (themeStr.includes('-')) {
+        const [base, variant] = themeStr.split('-') as [BaseTheme, ThemeVariant];
+        return { base, variant };
+      }
+      return { base: themeStr as BaseTheme, variant: 'default' as ThemeVariant };
+    };
+
+    const { base, variant } = parseTheme(theme);
+    setThemeVariant(variant);
+
     const updateResolvedTheme = () => {
-      if (theme === 'system') {
+      if (base === 'system') {
         const systemPrefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
         setResolvedTheme(systemPrefersDark ? 'dark' : 'light');
       } else {
-        setResolvedTheme(theme);
+        setResolvedTheme(base);
       }
     };
 
@@ -30,21 +44,36 @@ export function useTheme() {
 
   useEffect(() => {
     const root = document.documentElement;
+    
+    // Remove all theme classes
+    root.classList.remove('dark', 'theme-default', 'theme-blue', 'theme-green');
+    
+    // Add dark class if needed
     if (resolvedTheme === 'dark') {
       root.classList.add('dark');
-    } else {
-      root.classList.remove('dark');
     }
-  }, [resolvedTheme]);
+    
+    // Add theme variant class
+    root.classList.add(`theme-${themeVariant}`);
+  }, [resolvedTheme, themeVariant]);
 
   const changeTheme = (newTheme: Theme) => {
     setTheme(newTheme);
     localStorage.setItem('theme', newTheme);
   };
 
+  const getBaseTheme = (): BaseTheme => {
+    if (theme.includes('-')) {
+      return theme.split('-')[0] as BaseTheme;
+    }
+    return theme as BaseTheme;
+  };
+
   return {
     theme,
     resolvedTheme,
+    themeVariant,
+    baseTheme: getBaseTheme(),
     setTheme: changeTheme,
   };
 }

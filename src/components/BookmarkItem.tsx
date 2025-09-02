@@ -21,9 +21,11 @@ interface BookmarkItemProps {
   className?: string;
   isDragHandle?: boolean;
   dragHandleProps?: any;
+  isSelectionMode?: boolean;
+  onToggleSelection?: (bookmarkId: string) => void;
 }
 
-export function BookmarkItem({ bookmark, onEdit, onDelete, onShare, onCopy, className, isDragHandle, dragHandleProps }: BookmarkItemProps) {
+export function BookmarkItem({ bookmark, onEdit, onDelete, onShare, onCopy, className, isDragHandle, dragHandleProps, isSelectionMode, onToggleSelection }: BookmarkItemProps) {
   const openBookmark = () => {
     if (bookmark.url) {
       chrome.tabs.create({ url: bookmark.url });
@@ -79,7 +81,10 @@ export function BookmarkItem({ bookmark, onEdit, onDelete, onShare, onCopy, clas
                 </div>
               </div>
               
-              <div className="flex-1 min-w-0 cursor-pointer" onClick={openBookmark}>
+              <div 
+                className="flex-1 min-w-0 cursor-pointer" 
+                onClick={isSelectionMode ? () => onToggleSelection?.(bookmark.id) : openBookmark}
+              >
                 <h3 className="font-medium text-sm truncate">{bookmark.title}</h3>
                 {bookmark.url && (
                   <p className="text-xs text-muted-foreground truncate">

@@ -4,32 +4,68 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { useTheme } from '@/hooks/useTheme';
-import { Moon, Sun, Monitor } from 'lucide-react';
+import { Moon, Sun, Monitor, Palette } from 'lucide-react';
 
 export function ThemeToggle() {
-  const { theme, setTheme } = useTheme();
+  const { theme, setTheme, baseTheme, themeVariant } = useTheme();
+
+  const getThemeIcon = () => {
+    if (baseTheme === 'dark') return <Moon className="h-[1.2rem] w-[1.2rem]" />;
+    if (baseTheme === 'light') return <Sun className="h-[1.2rem] w-[1.2rem]" />;
+    return <Monitor className="h-[1.2rem] w-[1.2rem]" />;
+  };
+
+  const getVariantColor = (variant: string) => {
+    switch (variant) {
+      case 'blue': return 'text-blue-600';
+      case 'green': return 'text-green-600';
+      default: return '';
+    }
+  };
 
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
         <Button variant="outline" size="icon">
-          <Sun className="h-[1.2rem] w-[1.2rem] rotate-0 scale-100 transition-all dark:-rotate-90 dark:scale-0" />
-          <Moon className="absolute h-[1.2rem] w-[1.2rem] rotate-90 scale-0 transition-all dark:rotate-0 dark:scale-100" />
+          {getThemeIcon()}
           <span className="sr-only">Toggle theme</span>
         </Button>
       </DropdownMenuTrigger>
-      <DropdownMenuContent align="end">
+      <DropdownMenuContent align="end" className="w-48">
         <DropdownMenuItem onClick={() => setTheme('light')}>
           <Sun className="mr-2 h-4 w-4" />
-          <span>Light</span>
+          <span>Light Default</span>
         </DropdownMenuItem>
+        <DropdownMenuItem onClick={() => setTheme('light-blue')}>
+          <Sun className="mr-2 h-4 w-4 text-blue-600" />
+          <span>Light Blue</span>
+        </DropdownMenuItem>
+        <DropdownMenuItem onClick={() => setTheme('light-green')}>
+          <Sun className="mr-2 h-4 w-4 text-green-600" />
+          <span>Light Green</span>
+        </DropdownMenuItem>
+        
+        <DropdownMenuSeparator />
+        
         <DropdownMenuItem onClick={() => setTheme('dark')}>
           <Moon className="mr-2 h-4 w-4" />
-          <span>Dark</span>
+          <span>Dark Default</span>
         </DropdownMenuItem>
+        <DropdownMenuItem onClick={() => setTheme('dark-blue')}>
+          <Moon className="mr-2 h-4 w-4 text-blue-400" />
+          <span>Dark Blue</span>
+        </DropdownMenuItem>
+        <DropdownMenuItem onClick={() => setTheme('dark-green')}>
+          <Moon className="mr-2 h-4 w-4 text-green-400" />
+          <span>Dark Green</span>
+        </DropdownMenuItem>
+        
+        <DropdownMenuSeparator />
+        
         <DropdownMenuItem onClick={() => setTheme('system')}>
           <Monitor className="mr-2 h-4 w-4" />
           <span>System</span>
