@@ -3,17 +3,19 @@ import { motion } from 'framer-motion';
 import { BookmarkNode } from '@/lib/bookmarks';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Folder, FolderOpen, ChevronRight } from 'lucide-react';
+import { Folder, FolderOpen, ChevronRight, Edit, Trash2, Share } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 interface FolderItemProps {
   folder: BookmarkNode;
   onFolderSelect?: (folder: BookmarkNode) => void;
+  onEdit?: (folder: BookmarkNode) => void;
+  onDelete?: (folder: BookmarkNode) => void;
   className?: string;
   isSelected?: boolean;
 }
 
-export function FolderItem({ folder, onFolderSelect, className, isSelected }: FolderItemProps) {
+export function FolderItem({ folder, onFolderSelect, onEdit, onDelete, className, isSelected }: FolderItemProps) {
   const handleClick = () => {
     onFolderSelect?.(folder);
   };
@@ -65,8 +67,32 @@ export function FolderItem({ folder, onFolderSelect, className, isSelected }: Fo
             </div>
           </div>
 
-          <div className="flex-shrink-0 opacity-0 group-hover:opacity-100 transition-opacity">
-            <ChevronRight className="h-4 w-4 text-muted-foreground" />
+          <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-7 w-7"
+              onClick={(e) => {
+                e.stopPropagation();
+                onEdit?.(folder);
+              }}
+            >
+              <Edit className="h-3 w-3" />
+            </Button>
+            
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-7 w-7 text-destructive hover:text-destructive"
+              onClick={(e) => {
+                e.stopPropagation();
+                onDelete?.(folder);
+              }}
+            >
+              <Trash2 className="h-3 w-3" />
+            </Button>
+            
+            <ChevronRight className="h-4 w-4 text-muted-foreground ml-1" />
           </div>
         </div>
       </Card>

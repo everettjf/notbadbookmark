@@ -21,13 +21,14 @@ import { DraggableBookmarkItem } from '@/components/DraggableBookmarkItem';
 import { FolderItem } from '@/components/FolderItem';
 import { SearchBar } from '@/components/SearchBar';
 import { BookmarkDialog } from '@/components/BookmarkDialog';
+import { FolderDialog } from '@/components/FolderDialog';
 import { FolderTree } from '@/components/FolderTree';
 import { BlurFade } from '@/components/ui/blur-fade';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { BookmarkNode } from '@/lib/bookmarks';
 import { ImportExportService } from '@/lib/import-export';
-import { Plus, Settings, Download, Upload, Grid, List, Folder, Trash2, CheckSquare } from 'lucide-react';
+import { Plus, Settings, Download, Upload, Grid, List, Folder, Trash2, CheckSquare, FolderPlus } from 'lucide-react';
 
 export function BookmarkManager() {
   const {
@@ -45,7 +46,9 @@ export function BookmarkManager() {
 
   const [selectedFolder, setSelectedFolder] = useState<string | null>(null);
   const [editingBookmark, setEditingBookmark] = useState<BookmarkNode | null>(null);
+  const [editingFolder, setEditingFolder] = useState<BookmarkNode | null>(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [isFolderDialogOpen, setIsFolderDialogOpen] = useState(false);
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
   const [selectedBookmarks, setSelectedBookmarks] = useState<Set<string>>(new Set());
   const [sidebarOpen, setSidebarOpen] = useState(true);
@@ -88,6 +91,11 @@ export function BookmarkManager() {
     setIsDialogOpen(true);
   };
 
+  const handleAddFolder = () => {
+    setEditingFolder(null);
+    setIsFolderDialogOpen(true);
+  };
+
   const handleSaveBookmark = async (bookmarkData: { title: string; url: string; parentId?: string }) => {
     if (editingBookmark) {
       await updateBookmark(editingBookmark.id, {
@@ -102,6 +110,55 @@ export function BookmarkManager() {
   const handleCloseDialog = () => {
     setIsDialogOpen(false);
     setEditingBookmark(null);
+  };
+
+  const handleShareBookmark = async (bookmark: BookmarkNode) => {
+    if (bookmark.url) {
+      try {
+        await navigator.share({
+          title: bookmark.title,
+          url: bookmark.url,
+        });
+      } catch (error) {
+        // Fallback to clipboard
+        await navigator.clipboard.writeText(bookmark.url);
+        alert('Bookmark URL copied to clipboard!');
+      }
+    }
+  };
+
+  const handleEditFolder = (folder: BookmarkNode) => {
+    setEditingFolder(folder);
+    setIsFolderDialogOpen(true);
+  };
+
+  const handleDeleteFolder = async (folder: BookmarkNode) => {
+    if (confirm(`Delete folder "${folder.title}" and all its contents?`)) {
+      await removeBookmark(folder.id);
+    }
+  };
+
+  const handleSaveFolder = async (folderData: { title: string; parentId?: string }) => {
+    if (editingFolder) {
+      await updateBookmark(editingFolder.id, {
+        title: folderData.title,
+      });
+      if (folderData.parentId && folderData.parentId !== editingFolder.parentId) {
+        await moveBookmark(editingFolder.id, {
+          parentId: folderData.parentId,
+        });
+      }
+    } else {
+      await addBookmark({
+        title: folderData.title,
+        parentId: folderData.parentId,
+      });
+    }
+  };
+
+  const handleCloseFolderDialog = () => {
+    setIsFolderDialogOpen(false);
+    setEditingFolder(null);
   };
 
   const handleFolderSelect = (folderId: string | null) => {
@@ -302,6 +359,11 @@ export function BookmarkManager() {
                     Export
                   </Button>
                   
+                  <Button variant="outline" onClick={handleAddFolder}>
+                    <FolderPlus className="h-4 w-4 mr-2" />
+                    Add Folder
+                  </Button>
+                  
                   <Button onClick={handleAddBookmark}>
                     <Plus className="h-4 w-4 mr-2" />
                     Add Bookmark
@@ -372,6 +434,8 @@ export function BookmarkManager() {
                             <FolderItem
                               folder={folder}
                               onFolderSelect={(folder) => handleFolderSelect(folder.id)}
+                              onEdit={handleEditFolder}
+                              onDelete={handleDeleteFolder}
                               className={viewMode === 'list' ? 'w-full' : ''}
                             />
                           </BlurFade>
@@ -399,6 +463,7 @@ export function BookmarkManager() {
                               bookmark={bookmark}
                               onEdit={handleEditBookmark}
                               onDelete={handleDeleteBookmark}
+                              onShare={handleShareBookmark}
                               className={viewMode === 'list' ? 'w-full' : ''}
                               isSelected={selectedBookmarks.has(bookmark.id)}
                               isSelectionMode={isSelectionMode}
@@ -437,6 +502,15 @@ export function BookmarkManager() {
         onClose={handleCloseDialog}
         onSave={handleSaveBookmark}
         bookmark={editingBookmark}
+        folders={folders}
+      />
+
+      {/* Folder Dialog */}
+      <FolderDialog
+        isOpen={isFolderDialogOpen}
+        onClose={handleCloseFolderDialog}
+        onSave={handleSaveFolder}
+        folder={editingFolder}
         folders={folders}
       />
     </div>

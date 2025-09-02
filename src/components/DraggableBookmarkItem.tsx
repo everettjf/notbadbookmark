@@ -9,6 +9,7 @@ interface DraggableBookmarkItemProps {
   bookmark: BookmarkNode;
   onEdit?: (bookmark: BookmarkNode) => void;
   onDelete?: (bookmark: BookmarkNode) => void;
+  onShare?: (bookmark: BookmarkNode) => void;
   className?: string;
   isSelected?: boolean;
   isSelectionMode?: boolean;
@@ -19,6 +20,7 @@ export function DraggableBookmarkItem({
   bookmark, 
   onEdit, 
   onDelete, 
+  onShare,
   className,
   isSelected = false,
   isSelectionMode = false,
@@ -31,7 +33,10 @@ export function DraggableBookmarkItem({
     transform,
     transition,
     isDragging,
-  } = useSortable({ id: bookmark.id });
+  } = useSortable({ 
+    id: bookmark.id,
+    disabled: isSelectionMode
+  });
 
   const style = {
     transform: CSS.Transform.toString(transform),
@@ -44,11 +49,9 @@ export function DraggableBookmarkItem({
   };
 
   return (
-    <div
+    <div 
       ref={setNodeRef}
       style={style}
-      {...attributes}
-      {...(isSelectionMode ? {} : listeners)}
       className={className}
     >
       <div className="relative">
@@ -62,14 +65,19 @@ export function DraggableBookmarkItem({
           </div>
         )}
         
-        <BookmarkItem
-          bookmark={bookmark}
-          onEdit={onEdit}
-          onDelete={onDelete}
-          className={`${isDragging ? 'ring-2 ring-primary' : ''} ${
-            isSelected ? 'ring-2 ring-primary bg-primary/5' : ''
-          } ${isSelectionMode ? 'pl-8' : ''}`}
-        />
+        <div className="w-full">
+          <BookmarkItem
+            bookmark={bookmark}
+            onEdit={onEdit}
+            onDelete={onDelete}
+            onShare={onShare}
+            className={`${isDragging ? 'ring-2 ring-primary' : ''} ${
+              isSelected ? 'ring-2 ring-primary bg-primary/5' : ''
+            } ${isSelectionMode ? 'pl-8' : ''}`}
+            isDragHandle={!isSelectionMode}
+            dragHandleProps={isSelectionMode ? {} : { ...attributes, ...listeners }}
+          />
+        </div>
       </div>
     </div>
   );
