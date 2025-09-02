@@ -2,6 +2,13 @@ chrome.runtime.onInstalled.addListener(() => {
   console.log('NotBadBookmark extension installed');
 });
 
+// Handle extension icon click - open bookmark manager
+chrome.action.onClicked.addListener((tab) => {
+  chrome.tabs.create({
+    url: 'chrome://bookmarks/'
+  });
+});
+
 chrome.bookmarks.onChanged.addListener((id, changeInfo) => {
   console.log('Bookmark changed:', id, changeInfo);
 });
