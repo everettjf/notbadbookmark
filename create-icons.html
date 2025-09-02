@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Icon Generator</title>
+</head>
+<body>
+    <canvas id="canvas" width="128" height="128"></canvas>
+    <script>
+        const canvas = document.getElementById('canvas');
+        const ctx = canvas.getContext('2d');
+        
+        // Create icon
+        function createIcon(size) {
+            canvas.width = size;
+            canvas.height = size;
+            
+            // Background
+            ctx.fillStyle = '#3B82F6';
+            ctx.roundRect(0, 0, size, size, size * 0.1875);
+            ctx.fill();
+            
+            // Bookmark shape
+            const margin = size * 0.25;
+            const bookmarkWidth = size * 0.5;
+            const bookmarkHeight = size * 0.5;
+            
+            ctx.fillStyle = 'white';
+            ctx.beginPath();
+            ctx.moveTo(margin, margin);
+            ctx.lineTo(margin + bookmarkWidth, margin);
+            ctx.lineTo(margin + bookmarkWidth, margin + bookmarkHeight);
+            ctx.lineTo(margin + bookmarkWidth * 0.5, margin + bookmarkHeight * 0.75);
+            ctx.lineTo(margin, margin + bookmarkHeight);
+            ctx.closePath();
+            ctx.fill();
+            
+            return canvas.toDataURL('image/png');
+        }
+        
+        // Generate icons
+        const sizes = [16, 32, 48, 128];
+        sizes.forEach(size => {
+            const dataUrl = createIcon(size);
+            const link = document.createElement('a');
+            link.download = `icon${size}.png`;
+            link.href = dataUrl;
+            link.click();
+        });
+    </script>
+</body>
+</html>
