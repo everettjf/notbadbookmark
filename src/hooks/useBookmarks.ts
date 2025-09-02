@@ -36,8 +36,22 @@ export function useBookmarks() {
         return;
       }
       
-      const results = await BookmarkService.searchBookmarks(query);
-      setBookmarks(results.filter(bookmark => bookmark.url));
+      // Get all bookmarks first
+      const tree = await BookmarkService.getAllBookmarks();
+      const allBookmarks = BookmarkService.flattenBookmarks(tree);
+      
+      // Filter by title and URL
+      const searchQuery = query.toLowerCase();
+      const filteredResults = allBookmarks.filter(bookmark => {
+        if (!bookmark.url) return false; // Only include actual bookmarks
+        
+        const titleMatch = bookmark.title.toLowerCase().includes(searchQuery);
+        const urlMatch = bookmark.url.toLowerCase().includes(searchQuery);
+        
+        return titleMatch || urlMatch;
+      });
+      
+      setBookmarks(filteredResults);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Search failed');
     } finally {

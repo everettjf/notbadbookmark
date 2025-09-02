@@ -167,7 +167,7 @@ export function BookmarkManager() {
       } catch (error) {
         // Fallback to clipboard
         await navigator.clipboard.writeText(bookmark.url);
-        alert('Bookmark URL copied to clipboard!');
+        // alert('Bookmark URL copied to clipboard!');
       }
     }
   };
@@ -176,7 +176,7 @@ export function BookmarkManager() {
     if (bookmark.url) {
       try {
         await navigator.clipboard.writeText(bookmark.url);
-        alert('Bookmark URL copied to clipboard!');
+        // alert('Bookmark URL copied to clipboard!');
       } catch (error) {
         console.error('Failed to copy URL:', error);
       }
