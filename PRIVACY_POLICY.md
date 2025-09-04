@@ -32,7 +32,6 @@ All data related to NotBadBookmark is stored locally on your device:
 Our extension requires the following permissions:
 
 - **bookmarks**: To read and manage your bookmarks
-- **storage**: To save your preferences locally on your device
 - **activeTab**: To access the current tab when needed for bookmark operations
 
 These permissions are necessary for the core functionality of the extension and do not involve any data collection or transmission.

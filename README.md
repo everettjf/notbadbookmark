@@ -105,7 +105,6 @@ NotBadBookmark/
 
 The extension requires these Chrome permissions:
 - `bookmarks` - Read and modify user bookmarks
-- `storage` - Store user preferences and settings
 - `activeTab` - Open bookmarks in new tabs
 
 ### API Integration

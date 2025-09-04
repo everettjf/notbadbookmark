@@ -5,7 +5,6 @@
   "description": "A better bookmark manager for Chrome with modern UI and enhanced features",
   "permissions": [
     "bookmarks",
-    "storage",
     "activeTab"
   ],
   "action": {
