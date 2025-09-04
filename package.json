@@ -6,7 +6,9 @@
     "dev": "webpack --mode development --watch",
     "build": "webpack --mode production",
     "typecheck": "tsc --noEmit",
-    "lint": "eslint src --ext .ts,.tsx"
+    "lint": "eslint src --ext .ts,.tsx",
+    "zip": "node create-release-zip.js",
+    "release": "npm run build && npm run zip"
   },
   "dependencies": {
     "@dnd-kit/core": "^6.3.1",
