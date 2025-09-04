@@ -13,22 +13,27 @@ const zipName = `NotBadBookmark-v${version}.zip`;
 
 // Remove existing zip if it exists
 if (fs.existsSync(zipName)) {
-  fs.unlinkSync(zipName);
-  console.log(`Removed existing ${zipName}`);
+    fs.unlinkSync(zipName);
+    console.log(`Removed existing ${zipName}`);
 }
 
 // Create zip from release directory
 try {
-  console.log('Creating release zip...');
-  execSync(`cd release && zip -r ../${zipName} .`, { stdio: 'inherit' });
-  console.log(`✅ Successfully created ${zipName}`);
-  
-  // Show zip contents
-  console.log('\n📦 Zip contents:');
-  execSync(`unzip -l ${zipName}`, { stdio: 'inherit' });
-  
-  console.log(`\n🚀 Ready for Chrome Web Store upload: ${zipName}`);
+    // firstly, copy files from dist to release
+    console.log('Copying files from dist to release...');
+    execSync(`cp -r dist/* release/`, { stdio: 'inherit' });
+    console.log('Files copied from dist to release.');
+
+    console.log('Creating release zip...');
+    execSync(`cd release && zip -r ../${zipName} .`, { stdio: 'inherit' });
+    console.log(`✅ Successfully created ${zipName}`);
+
+    // Show zip contents
+    console.log('\n📦 Zip contents:');
+    execSync(`unzip -l ${zipName}`, { stdio: 'inherit' });
+
+    console.log(`\n🚀 Ready for Chrome Web Store upload: ${zipName}`);
 } catch (error) {
-  console.error('❌ Error creating zip:', error.message);
-  process.exit(1);
+    console.error('❌ Error creating zip:', error.message);
+    process.exit(1);
 }
