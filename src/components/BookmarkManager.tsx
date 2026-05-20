@@ -16,6 +16,7 @@ import {
   rectSortingStrategy,
 } from '@dnd-kit/sortable';
 import { useBookmarks } from '@/hooks/useBookmarks';
+import { usePersistedState } from '@/hooks/usePersistedState';
 import { DraggableBookmarkItem } from '@/components/DraggableBookmarkItem';
 import { FolderItem } from '@/components/FolderItem';
 import { SearchBar } from '@/components/SearchBar';
@@ -52,11 +53,11 @@ export function BookmarkManager() {
   const [editingFolder, setEditingFolder] = useState<BookmarkNode | null>(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [isFolderDialogOpen, setIsFolderDialogOpen] = useState(false);
-  const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
+  const [viewMode, setViewMode] = usePersistedState<'grid' | 'list'>('viewMode', 'grid');
   const [selectedBookmarks, setSelectedBookmarks] = useState<Set<string>>(new Set());
-  const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [sidebarOpen, setSidebarOpen] = usePersistedState('sidebarOpen', true);
   const [isSelectionMode, setIsSelectionMode] = useState(false);
-  const [sortOption, setSortOption] = useState<SortOption>('newest-first');
+  const [sortOption, setSortOption] = usePersistedState<SortOption>('sortOption', 'newest-first');
 
   const sensors = useSensors(
     useSensor(PointerSensor),

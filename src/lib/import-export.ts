@@ -6,6 +6,12 @@ export interface BookmarkExport {
   bookmarks: BookmarkNode[];
 }
 
+interface ParsedBookmark {
+  title: string;
+  url?: string;
+  children?: ParsedBookmark[];
+}
+
 export class ImportExportService {
   static async exportBookmarks(): Promise<string> {
     const bookmarks = await BookmarkService.getAllBookmarks();
@@ -133,36 +139,101 @@ export class ImportExportService {
     const parser = new DOMParser();
     const doc = parser.parseFromString(htmlContent, 'text/html');
     const links = doc.querySelectorAll('a[href]');
-    
+
     return Array.from(links).map(link => ({
       title: link.textContent || 'Untitled',
       url: link.getAttribute('href') || ''
     })).filter(bookmark => bookmark.url);
   }
 
+  // Walk the Netscape DL/DT tree, preserving folder hierarchy. The format omits
+  // end tags, so a folder's child <DL> may be parsed either as a child of its
+  // <DT> or as the next sibling; both layouts are handled.
+  static parseNetscapeTree(htmlContent: string): ParsedBookmark[] {
+    const doc = new DOMParser().parseFromString(htmlContent, 'text/html');
+    const rootDl = doc.querySelector('dl');
+    return rootDl ? this.parseDl(rootDl) : [];
+  }
+
+  private static parseDl(dl: Element): ParsedBookmark[] {
+    const nodes: ParsedBookmark[] = [];
+    const dts = Array.from(dl.children).filter((el) => el.tagName === 'DT');
+
+    for (const dt of dts) {
+      const heading = dt.querySelector(':scope > h3');
+      const anchor = dt.querySelector(':scope > a');
+
+      if (heading) {
+        let childDl = dt.querySelector(':scope > dl');
+        if (!childDl) {
+          let sib = dt.nextElementSibling;
+          while (sib && sib.tagName !== 'DL' && sib.tagName !== 'DT') {
+            sib = sib.nextElementSibling;
+          }
+          if (sib && sib.tagName === 'DL') childDl = sib;
+        }
+        nodes.push({
+          title: heading.textContent || 'Folder',
+          children: childDl ? this.parseDl(childDl) : [],
+        });
+      } else if (anchor) {
+        const url = anchor.getAttribute('href') || '';
+        if (url) nodes.push({ title: anchor.textContent || 'Untitled', url });
+      }
+    }
+    return nodes;
+  }
+
+  private static countBookmarks(nodes: ParsedBookmark[]): number {
+    return nodes.reduce(
+      (sum, node) => sum + (node.url ? 1 : 0) + (node.children ? this.countBookmarks(node.children) : 0),
+      0
+    );
+  }
+
+  private static async createTree(nodes: ParsedBookmark[], parentId: string): Promise<void> {
+    for (const node of nodes) {
+      if (node.url) {
+        await BookmarkService.createBookmark({ title: node.title, url: node.url, parentId });
+      } else {
+        const folder = await BookmarkService.createBookmark({ title: node.title, parentId });
+        await this.createTree(node.children || [], folder.id);
+      }
+    }
+  }
+
   static async importNetscapeBookmarks(file: File, targetFolderId?: string): Promise<void> {
     return new Promise((resolve, reject) => {
       const reader = new FileReader();
-      
+
       reader.onload = async (e) => {
         try {
           const content = e.target?.result as string;
-          const bookmarks = this.parseNetscapeBookmarks(content);
           const parentId = targetFolderId || '1';
-          
-          for (const bookmark of bookmarks) {
-            await BookmarkService.createBookmark({
-              title: bookmark.title,
-              url: bookmark.url,
-              parentId: parentId
-            });
+
+          const tree = this.parseNetscapeTree(content);
+          const flat = this.parseNetscapeBookmarks(content);
+
+          // Safety net: only trust the hierarchical walk if it captured every
+          // bookmark the flat scan found. Otherwise fall back to a flat import
+          // so no bookmark is ever silently dropped.
+          if (this.countBookmarks(tree) >= flat.length && tree.length > 0) {
+            await this.createTree(tree, parentId);
+          } else {
+            for (const bookmark of flat) {
+              await BookmarkService.createBookmark({
+                title: bookmark.title,
+                url: bookmark.url,
+                parentId,
+              });
+            }
           }
           resolve();
         } catch (error) {
           reject(error);
         }
       };
-      
+
       reader.onerror = () => reject(new Error('Failed to read file'));
       reader.readAsText(file);
     });
