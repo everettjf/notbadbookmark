@@ -31,7 +31,7 @@ export class ImportExportService {
       const dateStr = new Date().toISOString().split('T')[0];
       
       switch (format) {
-        case 'json':
+        case 'json': {
           const exportData: BookmarkExport = {
             version: '1.0.0',
             exportDate: new Date().toISOString(),
@@ -41,6 +41,7 @@ export class ImportExportService {
           mimeType = 'application/json';
           fileExtension = 'json';
           break;
+        }
           
         case 'html':
           content = this.exportToHTML(validBookmarksOnly);

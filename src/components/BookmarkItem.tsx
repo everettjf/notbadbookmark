@@ -1,5 +1,4 @@
 import React from 'react';
-import { motion } from 'framer-motion';
 import { BookmarkNode } from '@/lib/bookmarks';
 import { Card } from '@/components/ui/card';
 import {
@@ -20,12 +19,12 @@ interface BookmarkItemProps {
   onCopy?: (bookmark: BookmarkNode) => void;
   className?: string;
   isDragHandle?: boolean;
-  dragHandleProps?: any;
+  dragHandleProps?: Record<string, unknown>;
   isSelectionMode?: boolean;
   onToggleSelection?: (bookmarkId: string) => void;
 }
 
-export function BookmarkItem({ bookmark, onEdit, onDelete, onShare, onCopy, className, isDragHandle, dragHandleProps, isSelectionMode, onToggleSelection }: BookmarkItemProps) {
+function BookmarkItemComponent({ bookmark, onEdit, onDelete, onShare, onCopy, className, isDragHandle, dragHandleProps, isSelectionMode, onToggleSelection }: BookmarkItemProps) {
   const openBookmark = () => {
     if (bookmark.url) {
       chrome.tabs.create({ url: bookmark.url });
@@ -43,13 +42,7 @@ export function BookmarkItem({ bookmark, onEdit, onDelete, onShare, onCopy, clas
   };
 
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.3 }}
-      whileHover={{ scale: 1.01 }}
-      whileTap={{ scale: 0.99 }}
-    >
+    <div className="transition-transform duration-200 hover:scale-[1.01] active:scale-[0.99]">
       <ContextMenu>
         <ContextMenuTrigger asChild>
           <Card className={cn("relative p-2 hover:bg-accent/50 group border transition-all duration-200", className)}>
@@ -134,6 +127,8 @@ export function BookmarkItem({ bookmark, onEdit, onDelete, onShare, onCopy, clas
           </ContextMenuItem>
         </ContextMenuContent>
       </ContextMenu>
-    </motion.div>
+    </div>
   );
 }
+
+export const BookmarkItem = React.memo(BookmarkItemComponent);

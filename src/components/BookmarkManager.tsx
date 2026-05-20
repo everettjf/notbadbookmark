@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import {
   DndContext,
@@ -10,7 +10,6 @@ import {
   DragEndEvent,
 } from '@dnd-kit/core';
 import {
-  arrayMove,
   SortableContext,
   sortableKeyboardCoordinates,
   verticalListSortingStrategy,
@@ -31,7 +30,7 @@ import { ImportExportService } from '@/lib/import-export';
 import { ThemeToggle } from '@/components/ThemeToggle';
 import { SortDropdown, SortOption } from '@/components/SortDropdown';
 import { ExportDropdown } from '@/components/ExportDropdown';
-import { Plus, Settings, Download, Upload, Grid, List, Folder, Trash2, CheckSquare, FolderPlus, X } from 'lucide-react';
+import { Plus, Upload, Grid, List, Folder, Trash2, CheckSquare, FolderPlus, X } from 'lucide-react';
 
 export function BookmarkManager() {
   const {
@@ -77,8 +76,10 @@ export function BookmarkManager() {
 
   const sortBookmarks = (bookmarks: BookmarkNode[], sort: SortOption): BookmarkNode[] => {
     const sorted = [...bookmarks];
-    
+
     switch (sort) {
+      case 'manual':
+        return sorted.sort((a, b) => (a.index ?? 0) - (b.index ?? 0));
       case 'title-asc':
         return sorted.sort((a, b) => a.title.localeCompare(b.title));
       case 'title-desc':
@@ -308,7 +309,9 @@ export function BookmarkManager() {
       const newIndex = filteredBookmarks.findIndex(bookmark => bookmark.id === over?.id);
       
       if (oldIndex !== -1 && newIndex !== -1) {
-        // Move bookmark to new position
+        // Reordering only makes sense against the actual stored order, so pin
+        // the view to manual order before persisting the move.
+        setSortOption('manual');
         await moveBookmark(active.id as string, {
           parentId: selectedFolder || undefined,
           index: newIndex,

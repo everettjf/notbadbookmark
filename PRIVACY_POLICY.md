@@ -32,13 +32,18 @@ All data related to NotBadBookmark is stored locally on your device:
 Our extension requires the following permissions:
 
 - **bookmarks**: To read and manage your bookmarks
-- **activeTab**: To access the current tab when needed for bookmark operations
+- **storage**: To persist your UI preferences (theme, view mode, sort order) locally
 
 These permissions are necessary for the core functionality of the extension and do not involve any data collection or transmission.
 
 ## Third-Party Services
 
-We do not use any third-party services, analytics, or tracking tools.
+We do not use any analytics or tracking tools.
+
+To display website icons (favicons), the extension may request favicon images
+from Google's public favicon service (`https://www.google.com/s2/favicons`).
+This sends only the domain of a bookmarked site, never the full URL or any
+personal data. No other third-party services are used.
 
 ## Data Security
 

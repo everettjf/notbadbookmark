@@ -8,23 +8,15 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { useTheme } from '@/hooks/useTheme';
-import { Moon, Sun, Monitor, Palette, Circle } from 'lucide-react';
+import { Moon, Sun, Monitor, Circle } from 'lucide-react';
 
 export function ThemeToggle() {
-  const { theme, setTheme, baseTheme, themeVariant } = useTheme();
+  const { setTheme, baseTheme } = useTheme();
 
   const getThemeIcon = () => {
     if (baseTheme === 'dark') return <Moon className="h-[1.2rem] w-[1.2rem]" />;
     if (baseTheme === 'light') return <Sun className="h-[1.2rem] w-[1.2rem]" />;
     return <Monitor className="h-[1.2rem] w-[1.2rem]" />;
-  };
-
-  const getVariantColor = (variant: string) => {
-    switch (variant) {
-      case 'blue': return 'text-blue-600';
-      case 'green': return 'text-green-600';
-      default: return '';
-    }
   };
 
   return (
