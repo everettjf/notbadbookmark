@@ -69,8 +69,8 @@ export function BookmarkDialog({ isOpen, onClose, onSave, bookmark, folders }: B
           </DialogDescription>
         </DialogHeader>
         
-        <div className="grid gap-4 py-4">
-          <div className="grid gap-2">
+        <div className="grid gap-3 py-3">
+          <div className="grid gap-1.5">
             <label htmlFor="title" className="text-sm font-medium">
               Title
             </label>
@@ -82,7 +82,7 @@ export function BookmarkDialog({ isOpen, onClose, onSave, bookmark, folders }: B
             />
           </div>
           
-          <div className="grid gap-2">
+          <div className="grid gap-1.5">
             <label htmlFor="url" className="text-sm font-medium">
               URL
             </label>
@@ -95,7 +95,7 @@ export function BookmarkDialog({ isOpen, onClose, onSave, bookmark, folders }: B
             />
           </div>
           
-          <div className="grid gap-2">
+          <div className="grid gap-1.5">
             <label htmlFor="folder" className="text-sm font-medium">
               Folder
             </label>
@@ -103,7 +103,7 @@ export function BookmarkDialog({ isOpen, onClose, onSave, bookmark, folders }: B
               id="folder"
               value={parentId}
               onChange={(e) => setParentId(e.target.value)}
-              className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+              className="flex h-9 w-full rounded-md border border-input bg-background px-3 py-1.5 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
             >
               <option value="">Select folder...</option>
               {folders.map((folder) => (

@@ -1,5 +1,4 @@
 import React from 'react';
-import { motion } from 'framer-motion';
 import { BookmarkNode } from '@/lib/bookmarks';
 import { Card } from '@/components/ui/card';
 import {
@@ -21,7 +20,7 @@ interface FolderItemProps {
   isSelected?: boolean;
 }
 
-export function FolderItem({ folder, onFolderSelect, onEdit, onDelete, className, isSelected }: FolderItemProps) {
+function FolderItemComponent({ folder, onFolderSelect, onEdit, onDelete, className, isSelected }: FolderItemProps) {
   const handleClick = () => {
     onFolderSelect?.(folder);
   };
@@ -30,39 +29,33 @@ export function FolderItem({ folder, onFolderSelect, onEdit, onDelete, className
   const subfolderCount = folder.children?.filter(child => !child.url).length || 0;
 
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.3 }}
-      whileHover={{ scale: 1.01 }}
-      whileTap={{ scale: 0.99 }}
-    >
+    <div className="transition-transform duration-200 hover:scale-[1.01] active:scale-[0.99]">
       <ContextMenu>
         <ContextMenuTrigger asChild>
-          <Card 
+          <Card
             className={cn(
-              "p-3 cursor-pointer group border-2 transition-all duration-200",
-              isSelected 
-                ? "border-primary bg-primary/5 shadow-md" 
-                : "hover:bg-accent/50 hover:border-accent-foreground/20",
+              "p-1.5 cursor-pointer group border rounded-md transition-colors duration-150",
+              isSelected
+                ? "border-primary bg-primary/5"
+                : "hover:bg-accent/60",
               className
             )}
             onClick={handleClick}
           >
             <div className="flex items-center gap-2">
               <div className="flex-shrink-0">
-                <div className="p-1.5 rounded bg-primary/10 group-hover:bg-primary/15 transition-colors">
+                <div className="p-1 rounded bg-primary/10 group-hover:bg-primary/15 transition-colors">
                   {isSelected ? (
-                    <FolderOpen className="h-4 w-4 text-primary" />
+                    <FolderOpen className="h-3.5 w-3.5 text-primary" />
                   ) : (
-                    <Folder className="h-4 w-4 text-primary" />
+                    <Folder className="h-3.5 w-3.5 text-primary" />
                   )}
                 </div>
               </div>
-              
+
               <div className="flex-1 min-w-0">
-                <h3 className="font-medium text-sm truncate mb-0.5">{folder.title}</h3>
-                <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                <h3 className="font-medium text-[13px] leading-tight truncate">{folder.title}</h3>
+                <div className="flex items-center gap-2 text-[11px] leading-tight text-muted-foreground mt-0.5">
                   {bookmarkCount > 0 && (
                     <span>{bookmarkCount} bookmark{bookmarkCount !== 1 ? 's' : ''}</span>
                   )}
@@ -76,12 +69,12 @@ export function FolderItem({ folder, onFolderSelect, onEdit, onDelete, className
               </div>
 
               <div className="flex-shrink-0 opacity-0 group-hover:opacity-100 transition-opacity">
-                <ChevronRight className="h-4 w-4 text-muted-foreground" />
+                <ChevronRight className="h-3.5 w-3.5 text-muted-foreground" />
               </div>
             </div>
           </Card>
         </ContextMenuTrigger>
-        
+
         <ContextMenuContent className="w-48">
           <ContextMenuItem onClick={handleClick}>
             <Folder className="h-4 w-4 mr-2" />
@@ -104,6 +97,8 @@ export function FolderItem({ folder, onFolderSelect, onEdit, onDelete, className
           </ContextMenuItem>
         </ContextMenuContent>
       </ContextMenu>
-    </motion.div>
+    </div>
   );
 }
+
+export const FolderItem = React.memo(FolderItemComponent);

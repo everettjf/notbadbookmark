@@ -49,7 +49,7 @@ export function SearchBar({ onSearch, placeholder = "Search bookmarks...", class
         <Button
           variant="ghost"
           size="icon"
-          className="absolute right-1 top-1/2 transform -translate-y-1/2 h-8 w-8"
+          className="absolute right-1 top-1/2 transform -translate-y-1/2 h-7 w-7"
           onClick={clearSearch}
         >
           <X className="h-4 w-4" />

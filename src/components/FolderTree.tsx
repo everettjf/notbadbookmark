@@ -62,14 +62,14 @@ function FolderItem({
           <Button
             variant="ghost"
             className={cn(
-              "w-full justify-start text-left font-normal h-auto py-2 px-2",
+              "w-full justify-start text-left font-normal h-auto py-1 px-2 rounded-md",
               isSelected && "bg-accent text-accent-foreground",
               "hover:bg-accent/50"
             )}
-            style={{ paddingLeft: `${0.5 + level * 0.75}rem` }}
+            style={{ paddingLeft: `${0.5 + level * 0.625}rem` }}
             onClick={handleClick}
           >
-            <div className="flex items-center gap-2 w-full">
+            <div className="flex items-center gap-1.5 w-full">
               {hasChildren ? (
                 <Button
                   variant="ghost"
@@ -86,14 +86,14 @@ function FolderItem({
               ) : (
                 <div className="w-4" />
               )}
-              
+
               {isExpanded && hasChildren ? (
-                <FolderOpen className="h-4 w-4 text-muted-foreground" />
+                <FolderOpen className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
               ) : (
-                <Folder className="h-4 w-4 text-muted-foreground" />
+                <Folder className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
               )}
-              
-              <span className="truncate flex-1 text-sm">{folder.title}</span>
+
+              <span className="truncate flex-1 text-[13px]">{folder.title}</span>
             </div>
           </Button>
         </ContextMenuTrigger>
@@ -158,23 +158,23 @@ export function FolderTree({ folders, selectedFolder, onFolderSelect, onEditFold
   };
 
   return (
-    <div className="p-2">
+    <div className="p-1.5">
       <Button
         variant="ghost"
         className={cn(
-          "w-full justify-start text-left font-normal h-auto py-2 px-2 mb-2",
+          "w-full justify-start text-left font-normal h-auto py-1 px-2 mb-1 rounded-md",
           selectedFolder === null && "bg-accent text-accent-foreground",
           "hover:bg-accent/50"
         )}
         onClick={() => onFolderSelect(null)}
       >
-        <div className="flex items-center gap-2">
-          <Folder className="h-4 w-4 text-primary" />
-          <span className="text-sm font-medium">All Bookmarks</span>
+        <div className="flex items-center gap-1.5">
+          <Folder className="h-3.5 w-3.5 text-primary" />
+          <span className="text-[13px] font-medium">All Bookmarks</span>
         </div>
       </Button>
 
-      <div className="space-y-1">
+      <div className="space-y-0.5">
         {folders
           .filter(folder => folder.parentId === '0') // Root folders only
           .map(folder => (
