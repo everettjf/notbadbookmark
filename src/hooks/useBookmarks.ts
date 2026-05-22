@@ -54,9 +54,10 @@ export function useBookmarks() {
   const addBookmark = useCallback(
     async (bookmark: { parentId?: string; title: string; url?: string; index?: number }) => {
       try {
-        await BookmarkService.createBookmark(bookmark);
+        return await BookmarkService.createBookmark(bookmark);
       } catch (err) {
         setError(err instanceof Error ? err.message : 'Failed to add bookmark');
+        return undefined;
       }
     },
     []

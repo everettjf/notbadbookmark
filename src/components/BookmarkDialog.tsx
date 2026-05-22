@@ -10,11 +10,13 @@ import {
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { TagInput } from '@/components/TagInput';
+import { TagStore } from '@/lib/tags';
 
 interface BookmarkDialogProps {
   isOpen: boolean;
   onClose: () => void;
-  onSave: (bookmark: { title: string; url: string; parentId?: string }) => Promise<void>;
+  onSave: (bookmark: { title: string; url: string; parentId?: string; tags: string[] }) => Promise<void>;
   bookmark?: BookmarkNode | null;
   folders: BookmarkNode[];
 }
@@ -23,6 +25,7 @@ export function BookmarkDialog({ isOpen, onClose, onSave, bookmark, folders }: B
   const [title, setTitle] = useState('');
   const [url, setUrl] = useState('');
   const [parentId, setParentId] = useState<string>('');
+  const [tags, setTags] = useState<string[]>([]);
   const [isLoading, setIsLoading] = useState(false);
 
   useEffect(() => {
@@ -30,10 +33,12 @@ export function BookmarkDialog({ isOpen, onClose, onSave, bookmark, folders }: B
       setTitle(bookmark.title || '');
       setUrl(bookmark.url || '');
       setParentId(bookmark.parentId || '');
+      TagStore.getTags(bookmark.id).then(setTags);
     } else {
       setTitle('');
       setUrl('');
       setParentId('');
+      setTags([]);
     }
   }, [bookmark, isOpen]);
 
@@ -46,6 +51,7 @@ export function BookmarkDialog({ isOpen, onClose, onSave, bookmark, folders }: B
         title: title.trim(),
         url: url.trim(),
         parentId: parentId || undefined,
+        tags,
       });
       onClose();
     } catch (error) {
@@ -113,8 +119,13 @@ export function BookmarkDialog({ isOpen, onClose, onSave, bookmark, folders }: B
               ))}
             </select>
           </div>
+
+          <div className="grid gap-1.5">
+            <label className="text-sm font-medium">Tags</label>
+            <TagInput tags={tags} onChange={setTags} />
+          </div>
         </div>
-        
+
         <DialogFooter>
           <Button variant="outline" onClick={onClose} disabled={isLoading}>
             Cancel

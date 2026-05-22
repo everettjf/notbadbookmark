@@ -13,6 +13,7 @@ import { cn } from '@/lib/utils';
 
 interface BookmarkItemProps {
   bookmark: BookmarkNode;
+  tags?: string[];
   onEdit?: (bookmark: BookmarkNode) => void;
   onDelete?: (bookmark: BookmarkNode) => void;
   onShare?: (bookmark: BookmarkNode) => void;
@@ -24,7 +25,7 @@ interface BookmarkItemProps {
   onToggleSelection?: (bookmarkId: string) => void;
 }
 
-function BookmarkItemComponent({ bookmark, onEdit, onDelete, onShare, onCopy, className, isDragHandle, dragHandleProps, isSelectionMode, onToggleSelection }: BookmarkItemProps) {
+function BookmarkItemComponent({ bookmark, tags, onEdit, onDelete, onShare, onCopy, className, isDragHandle, dragHandleProps, isSelectionMode, onToggleSelection }: BookmarkItemProps) {
   const openBookmark = () => {
     if (bookmark.url) {
       chrome.tabs.create({ url: bookmark.url });
@@ -83,6 +84,21 @@ function BookmarkItemComponent({ bookmark, onEdit, onDelete, onShare, onCopy, cl
                   <p className="text-[11px] leading-tight text-muted-foreground truncate mt-0.5">
                     {new URL(bookmark.url).hostname}
                   </p>
+                )}
+                {tags && tags.length > 0 && (
+                  <div className="flex flex-wrap items-center gap-1 mt-1">
+                    {tags.slice(0, 3).map((tag) => (
+                      <span
+                        key={tag}
+                        className="inline-block max-w-[84px] truncate rounded bg-secondary px-1 text-[10px] leading-4 text-secondary-foreground"
+                      >
+                        {tag}
+                      </span>
+                    ))}
+                    {tags.length > 3 && (
+                      <span className="text-[10px] leading-4 text-muted-foreground">+{tags.length - 3}</span>
+                    )}
+                  </div>
                 )}
               </div>
             </div>

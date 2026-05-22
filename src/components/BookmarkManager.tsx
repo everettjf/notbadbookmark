@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import {
   DndContext,
@@ -17,6 +17,7 @@ import {
 } from '@dnd-kit/sortable';
 import { useBookmarks } from '@/hooks/useBookmarks';
 import { usePersistedState } from '@/hooks/usePersistedState';
+import { useTags } from '@/hooks/useTags';
 import { DraggableBookmarkItem } from '@/components/DraggableBookmarkItem';
 import { FolderItem } from '@/components/FolderItem';
 import { SearchBar } from '@/components/SearchBar';
@@ -25,8 +26,10 @@ import { FolderDialog } from '@/components/FolderDialog';
 import { FolderTree } from '@/components/FolderTree';
 import { BlurFade } from '@/components/ui/blur-fade';
 import { Button } from '@/components/ui/button';
-import { BookmarkNode } from '@/lib/bookmarks';
+import { BookmarkNode, BookmarkService } from '@/lib/bookmarks';
 import { ImportExportService } from '@/lib/import-export';
+import { TagStore, filterByTags } from '@/lib/tags';
+import { TagFilter } from '@/components/TagFilter';
 import { ThemeToggle } from '@/components/ThemeToggle';
 import { SortDropdown, SortOption } from '@/components/SortDropdown';
 import { ExportDropdown } from '@/components/ExportDropdown';
@@ -47,7 +50,21 @@ export function BookmarkManager() {
     refreshBookmarks,
   } = useBookmarks();
 
+  const tags = useTags();
+
+  const [selectedTags, setSelectedTags] = useState<string[]>([]);
   const [selectedFolder, setSelectedFolder] = useState<string | null>(null);
+
+  // Remove tag records for bookmarks that no longer exist (runs once on open,
+  // using the full bookmark set so search-filtered views never wipe tags).
+  useEffect(() => {
+    (async () => {
+      const tree = await BookmarkService.getAllBookmarks();
+      const ids = BookmarkService.flattenBookmarks(tree).map((b) => b.id);
+      await tags.prune(ids);
+    })();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
   const [editingBookmark, setEditingBookmark] = useState<BookmarkNode | null>(null);
   const [editingFolder, setEditingFolder] = useState<BookmarkNode | null>(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
@@ -116,7 +133,8 @@ export function BookmarkManager() {
     }
   };
 
-  const filteredBookmarks = sortBookmarks(baseFilteredBookmarks, sortOption);
+  const sortedBookmarks = sortBookmarks(baseFilteredBookmarks, sortOption);
+  const filteredBookmarks = filterByTags(sortedBookmarks, selectedTags, tags.tagMap);
 
   const handleSearch = async (query: string) => {
     await searchBookmarks(query);
@@ -130,6 +148,8 @@ export function BookmarkManager() {
 
   const handleDeleteBookmark = async (bookmark: BookmarkNode) => {
     await removeBookmark(bookmark.id);
+    await TagStore.removeBookmark(bookmark.id);
+    await tags.refresh();
   };
 
   const handleAddBookmark = () => {
@@ -142,14 +162,24 @@ export function BookmarkManager() {
     setIsFolderDialogOpen(true);
   };
 
-  const handleSaveBookmark = async (bookmarkData: { title: string; url: string; parentId?: string }) => {
+  const handleSaveBookmark = async (bookmarkData: { title: string; url: string; parentId?: string; tags: string[] }) => {
+    let bookmarkId = editingBookmark?.id;
     if (editingBookmark) {
       await updateBookmark(editingBookmark.id, {
         title: bookmarkData.title,
         url: bookmarkData.url,
       });
     } else {
-      await addBookmark(bookmarkData);
+      const created = await addBookmark({
+        title: bookmarkData.title,
+        url: bookmarkData.url,
+        parentId: bookmarkData.parentId,
+      });
+      bookmarkId = created?.id;
+    }
+    if (bookmarkId) {
+      await TagStore.setTags(bookmarkId, bookmarkData.tags);
+      await tags.refresh();
     }
   };
 
@@ -265,7 +295,9 @@ export function BookmarkManager() {
   const handleDeleteSelected = async () => {
     for (const bookmarkId of selectedBookmarks) {
       await removeBookmark(bookmarkId);
+      await TagStore.removeBookmark(bookmarkId);
     }
+    await tags.refresh();
     setSelectedBookmarks(new Set());
     setIsSelectionMode(false);
   };
@@ -444,7 +476,13 @@ export function BookmarkManager() {
                     currentSort={sortOption}
                     onSortChange={setSortOption}
                   />
-                  
+
+                  <TagFilter
+                    allTags={tags.allTags}
+                    selected={selectedTags}
+                    onChange={setSelectedTags}
+                  />
+
                   <Button variant="outline" size="sm" className="h-7 px-2 text-xs" onClick={handleImport}>
                     <Upload className="h-3 w-3 mr-1" />
                     Import
@@ -559,6 +597,7 @@ export function BookmarkManager() {
                           <BlurFade key={bookmark.id} delay={skipAnimation ? 0 : (currentSubfolders.length + index) * 0.01}>
                             <DraggableBookmarkItem
                               bookmark={bookmark}
+                              tags={tags.tagMap[bookmark.id]}
                               onEdit={handleEditBookmark}
                               onDelete={handleDeleteBookmark}
                               onShare={handleShareBookmark}
