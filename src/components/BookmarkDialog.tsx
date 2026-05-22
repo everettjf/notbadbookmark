@@ -10,11 +10,13 @@ import {
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { TagInput } from '@/components/TagInput';
+import { TagStore } from '@/lib/tags';
 
 interface BookmarkDialogProps {
   isOpen: boolean;
   onClose: () => void;
-  onSave: (bookmark: { title: string; url: string; parentId?: string }) => Promise<void>;
+  onSave: (bookmark: { title: string; url: string; parentId?: string; tags: string[] }) => Promise<void>;
   bookmark?: BookmarkNode | null;
   folders: BookmarkNode[];
 }
@@ -23,6 +25,7 @@ export function BookmarkDialog({ isOpen, onClose, onSave, bookmark, folders }: B
   const [title, setTitle] = useState('');
   const [url, setUrl] = useState('');
   const [parentId, setParentId] = useState<string>('');
+  const [tags, setTags] = useState<string[]>([]);
   const [isLoading, setIsLoading] = useState(false);
 
   useEffect(() => {
@@ -30,10 +33,12 @@ export function BookmarkDialog({ isOpen, onClose, onSave, bookmark, folders }: B
       setTitle(bookmark.title || '');
       setUrl(bookmark.url || '');
       setParentId(bookmark.parentId || '');
+      TagStore.getTags(bookmark.id).then(setTags);
     } else {
       setTitle('');
       setUrl('');
       setParentId('');
+      setTags([]);
     }
   }, [bookmark, isOpen]);
 
@@ -46,6 +51,7 @@ export function BookmarkDialog({ isOpen, onClose, onSave, bookmark, folders }: B
         title: title.trim(),
         url: url.trim(),
         parentId: parentId || undefined,
+        tags,
       });
       onClose();
     } catch (error) {
@@ -69,8 +75,8 @@ export function BookmarkDialog({ isOpen, onClose, onSave, bookmark, folders }: B
           </DialogDescription>
         </DialogHeader>
         
-        <div className="grid gap-4 py-4">
-          <div className="grid gap-2">
+        <div className="grid gap-3 py-3">
+          <div className="grid gap-1.5">
             <label htmlFor="title" className="text-sm font-medium">
               Title
             </label>
@@ -82,7 +88,7 @@ export function BookmarkDialog({ isOpen, onClose, onSave, bookmark, folders }: B
             />
           </div>
           
-          <div className="grid gap-2">
+          <div className="grid gap-1.5">
             <label htmlFor="url" className="text-sm font-medium">
               URL
             </label>
@@ -95,7 +101,7 @@ export function BookmarkDialog({ isOpen, onClose, onSave, bookmark, folders }: B
             />
           </div>
           
-          <div className="grid gap-2">
+          <div className="grid gap-1.5">
             <label htmlFor="folder" className="text-sm font-medium">
               Folder
             </label>
@@ -103,7 +109,7 @@ export function BookmarkDialog({ isOpen, onClose, onSave, bookmark, folders }: B
               id="folder"
               value={parentId}
               onChange={(e) => setParentId(e.target.value)}
-              className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+              className="flex h-9 w-full rounded-md border border-input bg-background px-3 py-1.5 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
             >
               <option value="">Select folder...</option>
               {folders.map((folder) => (
@@ -113,8 +119,13 @@ export function BookmarkDialog({ isOpen, onClose, onSave, bookmark, folders }: B
               ))}
             </select>
           </div>
+
+          <div className="grid gap-1.5">
+            <label className="text-sm font-medium">Tags</label>
+            <TagInput tags={tags} onChange={setTags} />
+          </div>
         </div>
-        
+
         <DialogFooter>
           <Button variant="outline" onClick={onClose} disabled={isLoading}>
             Cancel

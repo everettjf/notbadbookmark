@@ -7,6 +7,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 
 interface DraggableBookmarkItemProps {
   bookmark: BookmarkNode;
+  tags?: string[];
   onEdit?: (bookmark: BookmarkNode) => void;
   onDelete?: (bookmark: BookmarkNode) => void;
   onShare?: (bookmark: BookmarkNode) => void;
@@ -17,10 +18,11 @@ interface DraggableBookmarkItemProps {
   onToggleSelection?: (bookmarkId: string) => void;
 }
 
-export function DraggableBookmarkItem({ 
-  bookmark, 
-  onEdit, 
-  onDelete, 
+export function DraggableBookmarkItem({
+  bookmark,
+  tags,
+  onEdit,
+  onDelete,
   onShare,
   onCopy,
   className,
@@ -70,6 +72,7 @@ export function DraggableBookmarkItem({
         <div className="w-full">
           <BookmarkItem
             bookmark={bookmark}
+            tags={tags}
             onEdit={onEdit}
             onDelete={onDelete}
             onShare={onShare}

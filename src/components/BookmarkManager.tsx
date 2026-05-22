@@ -10,13 +10,14 @@ import {
   DragEndEvent,
 } from '@dnd-kit/core';
 import {
-  arrayMove,
   SortableContext,
   sortableKeyboardCoordinates,
   verticalListSortingStrategy,
   rectSortingStrategy,
 } from '@dnd-kit/sortable';
 import { useBookmarks } from '@/hooks/useBookmarks';
+import { usePersistedState } from '@/hooks/usePersistedState';
+import { useTags } from '@/hooks/useTags';
 import { DraggableBookmarkItem } from '@/components/DraggableBookmarkItem';
 import { FolderItem } from '@/components/FolderItem';
 import { SearchBar } from '@/components/SearchBar';
@@ -25,13 +26,14 @@ import { FolderDialog } from '@/components/FolderDialog';
 import { FolderTree } from '@/components/FolderTree';
 import { BlurFade } from '@/components/ui/blur-fade';
 import { Button } from '@/components/ui/button';
-import { Card } from '@/components/ui/card';
-import { BookmarkNode } from '@/lib/bookmarks';
+import { BookmarkNode, BookmarkService } from '@/lib/bookmarks';
 import { ImportExportService } from '@/lib/import-export';
+import { TagStore, filterByTags } from '@/lib/tags';
+import { TagFilter } from '@/components/TagFilter';
 import { ThemeToggle } from '@/components/ThemeToggle';
 import { SortDropdown, SortOption } from '@/components/SortDropdown';
 import { ExportDropdown } from '@/components/ExportDropdown';
-import { Plus, Settings, Download, Upload, Grid, List, Folder, Trash2, CheckSquare, FolderPlus, X } from 'lucide-react';
+import { Plus, Upload, Grid, List, Folder, Trash2, CheckSquare, FolderPlus, X } from 'lucide-react';
 
 export function BookmarkManager() {
   const {
@@ -48,16 +50,30 @@ export function BookmarkManager() {
     refreshBookmarks,
   } = useBookmarks();
 
+  const tags = useTags();
+
+  const [selectedTags, setSelectedTags] = useState<string[]>([]);
   const [selectedFolder, setSelectedFolder] = useState<string | null>(null);
+
+  // Remove tag records for bookmarks that no longer exist (runs once on open,
+  // using the full bookmark set so search-filtered views never wipe tags).
+  useEffect(() => {
+    (async () => {
+      const tree = await BookmarkService.getAllBookmarks();
+      const ids = BookmarkService.flattenBookmarks(tree).map((b) => b.id);
+      await tags.prune(ids);
+    })();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
   const [editingBookmark, setEditingBookmark] = useState<BookmarkNode | null>(null);
   const [editingFolder, setEditingFolder] = useState<BookmarkNode | null>(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [isFolderDialogOpen, setIsFolderDialogOpen] = useState(false);
-  const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
+  const [viewMode, setViewMode] = usePersistedState<'grid' | 'list'>('viewMode', 'grid');
   const [selectedBookmarks, setSelectedBookmarks] = useState<Set<string>>(new Set());
-  const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [sidebarOpen, setSidebarOpen] = usePersistedState('sidebarOpen', true);
   const [isSelectionMode, setIsSelectionMode] = useState(false);
-  const [sortOption, setSortOption] = useState<SortOption>('newest-first');
+  const [sortOption, setSortOption] = usePersistedState<SortOption>('sortOption', 'newest-first');
 
   const sensors = useSensors(
     useSensor(PointerSensor),
@@ -77,8 +93,10 @@ export function BookmarkManager() {
 
   const sortBookmarks = (bookmarks: BookmarkNode[], sort: SortOption): BookmarkNode[] => {
     const sorted = [...bookmarks];
-    
+
     switch (sort) {
+      case 'manual':
+        return sorted.sort((a, b) => (a.index ?? 0) - (b.index ?? 0));
       case 'title-asc':
         return sorted.sort((a, b) => a.title.localeCompare(b.title));
       case 'title-desc':
@@ -115,7 +133,8 @@ export function BookmarkManager() {
     }
   };
 
-  const filteredBookmarks = sortBookmarks(baseFilteredBookmarks, sortOption);
+  const sortedBookmarks = sortBookmarks(baseFilteredBookmarks, sortOption);
+  const filteredBookmarks = filterByTags(sortedBookmarks, selectedTags, tags.tagMap);
 
   const handleSearch = async (query: string) => {
     await searchBookmarks(query);
@@ -129,6 +148,8 @@ export function BookmarkManager() {
 
   const handleDeleteBookmark = async (bookmark: BookmarkNode) => {
     await removeBookmark(bookmark.id);
+    await TagStore.removeBookmark(bookmark.id);
+    await tags.refresh();
   };
 
   const handleAddBookmark = () => {
@@ -141,14 +162,24 @@ export function BookmarkManager() {
     setIsFolderDialogOpen(true);
   };
 
-  const handleSaveBookmark = async (bookmarkData: { title: string; url: string; parentId?: string }) => {
+  const handleSaveBookmark = async (bookmarkData: { title: string; url: string; parentId?: string; tags: string[] }) => {
+    let bookmarkId = editingBookmark?.id;
     if (editingBookmark) {
       await updateBookmark(editingBookmark.id, {
         title: bookmarkData.title,
         url: bookmarkData.url,
       });
     } else {
-      await addBookmark(bookmarkData);
+      const created = await addBookmark({
+        title: bookmarkData.title,
+        url: bookmarkData.url,
+        parentId: bookmarkData.parentId,
+      });
+      bookmarkId = created?.id;
+    }
+    if (bookmarkId) {
+      await TagStore.setTags(bookmarkId, bookmarkData.tags);
+      await tags.refresh();
     }
   };
 
@@ -264,7 +295,9 @@ export function BookmarkManager() {
   const handleDeleteSelected = async () => {
     for (const bookmarkId of selectedBookmarks) {
       await removeBookmark(bookmarkId);
+      await TagStore.removeBookmark(bookmarkId);
     }
+    await tags.refresh();
     setSelectedBookmarks(new Set());
     setIsSelectionMode(false);
   };
@@ -308,7 +341,9 @@ export function BookmarkManager() {
       const newIndex = filteredBookmarks.findIndex(bookmark => bookmark.id === over?.id);
       
       if (oldIndex !== -1 && newIndex !== -1) {
-        // Move bookmark to new position
+        // Reordering only makes sense against the actual stored order, so pin
+        // the view to manual order before persisting the move.
+        setSortOption('manual');
         await moveBookmark(active.id as string, {
           parentId: selectedFolder || undefined,
           index: newIndex,
@@ -336,13 +371,13 @@ export function BookmarkManager() {
       {/* Sidebar */}
       {sidebarOpen && (
         <motion.div
-          className="w-64 border-r bg-card flex flex-col"
-          initial={{ x: -264 }}
+          className="w-56 border-r bg-card flex flex-col"
+          initial={{ x: -224 }}
           animate={{ x: 0 }}
           transition={{ duration: 0.3 }}
         >
-          <div className="p-4 border-b">
-            <h2 className="font-semibold text-lg bg-gradient-to-r from-primary to-primary/70 bg-clip-text text-transparent">
+          <div className="px-3 py-2 border-b">
+            <h2 className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
               Folders
             </h2>
           </div>
@@ -368,16 +403,17 @@ export function BookmarkManager() {
           transition={{ duration: 0.5 }}
         >
           <div className="flex items-center justify-between mb-1">
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-2">
               <Button
                 variant="ghost"
                 size="icon"
+                className="h-7 w-7"
                 onClick={() => setSidebarOpen(!sidebarOpen)}
               >
-                <Folder className="h-5 w-5" />
+                <Folder className="h-4 w-4" />
               </Button>
-              <h1 className="text-2xl font-bold bg-gradient-to-r from-primary to-primary/70 bg-clip-text text-transparent">
-                NotBadBookmark Manager
+              <h1 className="text-sm font-semibold tracking-tight">
+                NotBadBookmark
               </h1>
             </div>
             
@@ -440,7 +476,13 @@ export function BookmarkManager() {
                     currentSort={sortOption}
                     onSortChange={setSortOption}
                   />
-                  
+
+                  <TagFilter
+                    allTags={tags.allTags}
+                    selected={selectedTags}
+                    onChange={setSelectedTags}
+                  />
+
                   <Button variant="outline" size="sm" className="h-7 px-2 text-xs" onClick={handleImport}>
                     <Upload className="h-3 w-3 mr-1" />
                     Import
@@ -472,7 +514,7 @@ export function BookmarkManager() {
             />
             
             <div className="flex items-center gap-3">
-              <div className="text-sm text-muted-foreground">
+              <div className="text-xs text-muted-foreground">
                 {currentSubfolders.length > 0 && `${currentSubfolders.length} folders • `}
                 {filteredBookmarks.length} bookmarks
                 {selectedFolder && ' in current folder'}
@@ -496,8 +538,10 @@ export function BookmarkManager() {
         {/* Content Area */}
         <div className="flex-1 overflow-auto pt-2 px-3 pb-4">
           {isLoading ? (
-            <div className="flex items-center justify-center h-64">
-              <div className="text-muted-foreground">Loading bookmarks...</div>
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-1.5">
+              {Array.from({ length: 18 }).map((_, i) => (
+                <div key={i} className="h-[38px] rounded-md border bg-card animate-pulse" />
+              ))}
             </div>
           ) : (
             <DndContext
@@ -509,16 +553,16 @@ export function BookmarkManager() {
                 items={filteredBookmarks.map(b => b.id)}
                 strategy={viewMode === 'grid' ? rectSortingStrategy : verticalListSortingStrategy}
               >
-                <div className="space-y-3">
+                <div className="space-y-2">
                   {/* Subfolders Section */}
                   {currentSubfolders.length > 0 && (
                     <div>
-                      <h3 className="text-sm font-semibold text-muted-foreground mb-2 px-1">
+                      <h3 className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground mb-1.5 px-1">
                         FOLDERS
                       </h3>
                       <div className={`${
                         viewMode === 'grid' 
-                          ? 'grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-2' 
+                          ? 'grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-1.5'
                           : 'space-y-1'
                       }`}>
                         {currentSubfolders.map((folder, index) => (
@@ -540,19 +584,20 @@ export function BookmarkManager() {
                   {filteredBookmarks.length > 0 && (
                     <div>
                       {currentSubfolders.length > 0 && (
-                        <h3 className="text-sm font-semibold text-muted-foreground mb-2 px-1">
+                        <h3 className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground mb-1.5 px-1">
                           BOOKMARKS
                         </h3>
                       )}
                       <div className={`${
                         viewMode === 'grid' 
-                          ? 'grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-2' 
+                          ? 'grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-1.5'
                           : 'space-y-1'
                       }`}>
                         {filteredBookmarks.map((bookmark, index) => (
                           <BlurFade key={bookmark.id} delay={skipAnimation ? 0 : (currentSubfolders.length + index) * 0.01}>
                             <DraggableBookmarkItem
                               bookmark={bookmark}
+                              tags={tags.tagMap[bookmark.id]}
                               onEdit={handleEditBookmark}
                               onDelete={handleDeleteBookmark}
                               onShare={handleShareBookmark}
@@ -571,15 +616,18 @@ export function BookmarkManager() {
                   {/* Empty State */}
                   {filteredBookmarks.length === 0 && currentSubfolders.length === 0 && (
                     <BlurFade delay={0.1}>
-                      <Card className="p-12 text-center">
-                        <div className="text-muted-foreground mb-4">
+                      <div className="flex flex-col items-center justify-center text-center py-16">
+                        <div className="mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-muted">
+                          <Folder className="h-6 w-6 text-muted-foreground" />
+                        </div>
+                        <div className="text-sm text-muted-foreground mb-4">
                           {selectedFolder ? 'This folder is empty' : 'No bookmarks found'}
                         </div>
-                        <Button onClick={handleAddBookmark}>
-                          <Plus className="h-4 w-4 mr-2" />
+                        <Button size="sm" className="h-8" onClick={handleAddBookmark}>
+                          <Plus className="h-3.5 w-3.5 mr-1.5" />
                           Add Your First Bookmark
                         </Button>
-                      </Card>
+                      </div>
                     </BlurFade>
                   )}
                 </div>

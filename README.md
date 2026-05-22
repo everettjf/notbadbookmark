@@ -39,14 +39,18 @@ NotBadBookmark/
 │   │   │   ├── input.tsx
 │   │   │   ├── blur-fade.tsx
 │   │   │   └── border-beam.tsx
-│   │   ├── App.tsx        # Main application component
+│   │   ├── BookmarkManager.tsx # Main application component
 │   │   ├── BookmarkItem.tsx # Individual bookmark display
+│   │   ├── DraggableBookmarkItem.tsx # Drag-and-drop wrapper
 │   │   ├── BookmarkDialog.tsx # Add/edit bookmark modal
+│   │   ├── FolderTree.tsx # Sidebar folder navigation
 │   │   └── SearchBar.tsx  # Search input component
 │   ├── hooks/
-│   │   └── useBookmarks.ts # Bookmark state management hook
+│   │   ├── useBookmarks.ts # Bookmark state management hook
+│   │   └── useTheme.ts    # Theme/dark-mode state hook
 │   ├── lib/
 │   │   ├── bookmarks.ts   # Chrome bookmarks API wrapper
+│   │   ├── import-export.ts # JSON/HTML/Markdown import & export
 │   │   └── utils.ts       # Utility functions (cn helper)
 │   ├── globals.css        # Global styles and theme variables
 │   ├── popup.tsx          # Popup entry point
@@ -105,7 +109,7 @@ NotBadBookmark/
 
 The extension requires these Chrome permissions:
 - `bookmarks` - Read and modify user bookmarks
-- `activeTab` - Open bookmarks in new tabs
+- `storage` - Persist UI preferences (theme, view mode, sort order) locally
 
 ### API Integration
 
@@ -154,12 +158,12 @@ The extension follows shadcn/ui design principles:
 
 ## Future Enhancements
 
-- Drag and drop bookmark organization
-- Import/export functionality
-- Advanced filtering and sorting options
-- Keyboard shortcuts
-- Custom themes and layouts
-- Backup and sync features
+- Tag system (metadata beyond Chrome's native folders)
+- On-device AI auto-tagging and categorization
+- Command palette and keyboard shortcuts
+- Dead-link detection
+- Internationalization (i18n)
+- Full-text content search
 
 ## Contributing
 

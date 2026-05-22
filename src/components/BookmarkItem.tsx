@@ -1,5 +1,4 @@
 import React from 'react';
-import { motion } from 'framer-motion';
 import { BookmarkNode } from '@/lib/bookmarks';
 import { Card } from '@/components/ui/card';
 import {
@@ -14,18 +13,19 @@ import { cn } from '@/lib/utils';
 
 interface BookmarkItemProps {
   bookmark: BookmarkNode;
+  tags?: string[];
   onEdit?: (bookmark: BookmarkNode) => void;
   onDelete?: (bookmark: BookmarkNode) => void;
   onShare?: (bookmark: BookmarkNode) => void;
   onCopy?: (bookmark: BookmarkNode) => void;
   className?: string;
   isDragHandle?: boolean;
-  dragHandleProps?: any;
+  dragHandleProps?: Record<string, unknown>;
   isSelectionMode?: boolean;
   onToggleSelection?: (bookmarkId: string) => void;
 }
 
-export function BookmarkItem({ bookmark, onEdit, onDelete, onShare, onCopy, className, isDragHandle, dragHandleProps, isSelectionMode, onToggleSelection }: BookmarkItemProps) {
+function BookmarkItemComponent({ bookmark, tags, onEdit, onDelete, onShare, onCopy, className, isDragHandle, dragHandleProps, isSelectionMode, onToggleSelection }: BookmarkItemProps) {
   const openBookmark = () => {
     if (bookmark.url) {
       chrome.tabs.create({ url: bookmark.url });
@@ -43,33 +43,27 @@ export function BookmarkItem({ bookmark, onEdit, onDelete, onShare, onCopy, clas
   };
 
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.3 }}
-      whileHover={{ scale: 1.01 }}
-      whileTap={{ scale: 0.99 }}
-    >
+    <div className="transition-transform duration-200 hover:scale-[1.01] active:scale-[0.99]">
       <ContextMenu>
         <ContextMenuTrigger asChild>
-          <Card className={cn("relative p-2 hover:bg-accent/50 group border transition-all duration-200", className)}>
+          <Card className={cn("relative p-1.5 hover:bg-accent/60 group border rounded-md transition-colors duration-150", className)}>
             <div className="flex items-center gap-2">
               {isDragHandle && (
-                <div 
+                <div
                   {...dragHandleProps}
-                  className="flex-shrink-0 cursor-grab active:cursor-grabbing opacity-50 hover:opacity-100 transition-opacity"
+                  className="flex-shrink-0 cursor-grab active:cursor-grabbing opacity-0 group-hover:opacity-60 hover:!opacity-100 transition-opacity"
                 >
-                  <GripVertical className="h-4 w-4 text-muted-foreground" />
+                  <GripVertical className="h-3.5 w-3.5 text-muted-foreground" />
                 </div>
               )}
-              
+
               <div className="flex-shrink-0">
-                <div className="w-6 h-6 rounded bg-blue-50 dark:bg-blue-950 flex items-center justify-center">
+                <div className="w-5 h-5 rounded bg-muted/60 ring-1 ring-border/60 flex items-center justify-center overflow-hidden">
                   {bookmark.url ? (
                     <img
                       src={getFavicon(bookmark.url)}
                       alt=""
-                      className="w-3 h-3"
+                      className="w-3.5 h-3.5"
                       onError={(e) => {
                         const target = e.target as HTMLImageElement;
                         target.style.display = 'none';
@@ -77,19 +71,34 @@ export function BookmarkItem({ bookmark, onEdit, onDelete, onShare, onCopy, clas
                       }}
                     />
                   ) : null}
-                  <Link className={`w-3 h-3 text-blue-600 dark:text-blue-400 ${bookmark.url ? 'hidden' : ''}`} />
+                  <Link className={`w-3 h-3 text-muted-foreground ${bookmark.url ? 'hidden' : ''}`} />
                 </div>
               </div>
-              
-              <div 
-                className="flex-1 min-w-0 cursor-pointer" 
+
+              <div
+                className="flex-1 min-w-0 cursor-pointer"
                 onClick={isSelectionMode ? () => onToggleSelection?.(bookmark.id) : openBookmark}
               >
-                <h3 className="font-medium text-sm truncate">{bookmark.title}</h3>
+                <h3 className="font-medium text-[13px] leading-tight truncate">{bookmark.title}</h3>
                 {bookmark.url && (
-                  <p className="text-xs text-muted-foreground truncate">
+                  <p className="text-[11px] leading-tight text-muted-foreground truncate mt-0.5">
                     {new URL(bookmark.url).hostname}
                   </p>
+                )}
+                {tags && tags.length > 0 && (
+                  <div className="flex flex-wrap items-center gap-1 mt-1">
+                    {tags.slice(0, 3).map((tag) => (
+                      <span
+                        key={tag}
+                        className="inline-block max-w-[84px] truncate rounded bg-secondary px-1 text-[10px] leading-4 text-secondary-foreground"
+                      >
+                        {tag}
+                      </span>
+                    ))}
+                    {tags.length > 3 && (
+                      <span className="text-[10px] leading-4 text-muted-foreground">+{tags.length - 3}</span>
+                    )}
+                  </div>
                 )}
               </div>
             </div>
@@ -134,6 +143,8 @@ export function BookmarkItem({ bookmark, onEdit, onDelete, onShare, onCopy, clas
           </ContextMenuItem>
         </ContextMenuContent>
       </ContextMenu>
-    </motion.div>
+    </div>
   );
 }
+
+export const BookmarkItem = React.memo(BookmarkItemComponent);

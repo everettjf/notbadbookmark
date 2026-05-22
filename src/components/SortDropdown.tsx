@@ -6,9 +6,9 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { ArrowUpDown, ArrowUpAZ, ArrowDownAZ } from 'lucide-react';
+import { ArrowUpDown, ArrowUpAZ, ArrowDownAZ, GripVertical } from 'lucide-react';
 
-export type SortOption = 'title-asc' | 'title-desc' | 'domain-asc' | 'domain-desc' | 'newest-first' | 'oldest-first';
+export type SortOption = 'manual' | 'title-asc' | 'title-desc' | 'domain-asc' | 'domain-desc' | 'newest-first' | 'oldest-first';
 
 interface SortDropdownProps {
   currentSort: SortOption;
@@ -18,6 +18,7 @@ interface SortDropdownProps {
 export function SortDropdown({ currentSort, onSortChange }: SortDropdownProps) {
   const getSortLabel = (sort: SortOption) => {
     switch (sort) {
+      case 'manual': return 'Manual Order';
       case 'title-asc': return 'Title A-Z';
       case 'title-desc': return 'Title Z-A';
       case 'domain-asc': return 'Domain A-Z';
@@ -37,6 +38,10 @@ export function SortDropdown({ currentSort, onSortChange }: SortDropdownProps) {
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end">
+        <DropdownMenuItem onClick={() => onSortChange('manual')}>
+          <GripVertical className="mr-2 h-4 w-4" />
+          <span>Manual Order</span>
+        </DropdownMenuItem>
         <DropdownMenuItem onClick={() => onSortChange('title-asc')}>
           <ArrowUpAZ className="mr-2 h-4 w-4" />
           <span>Title A-Z</span>

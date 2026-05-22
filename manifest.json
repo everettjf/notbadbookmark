@@ -5,7 +5,7 @@
   "description": "A better bookmark manager for Chrome with modern UI and enhanced features",
   "permissions": [
     "bookmarks",
-    "activeTab"
+    "storage"
   ],
   "action": {
     "default_title": "Open NotBadBookmark Manager"
