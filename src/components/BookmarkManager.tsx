@@ -30,6 +30,7 @@ import { BookmarkNode, BookmarkService } from '@/lib/bookmarks';
 import { ImportExportService } from '@/lib/import-export';
 import { TagStore, filterByTags } from '@/lib/tags';
 import { TagFilter } from '@/components/TagFilter';
+import { toast } from '@/hooks/use-toast';
 import { ThemeToggle } from '@/components/ThemeToggle';
 import { SortDropdown, SortOption } from '@/components/SortDropdown';
 import { ExportDropdown } from '@/components/ExportDropdown';
@@ -207,9 +208,9 @@ export function BookmarkManager() {
     if (bookmark.url) {
       try {
         await navigator.clipboard.writeText(bookmark.url);
-        // alert('Bookmark URL copied to clipboard!');
+        toast({ title: 'Link copied', description: bookmark.url });
       } catch (error) {
-        console.error('Failed to copy URL:', error);
+        toast({ variant: 'destructive', title: 'Copy failed' });
       }
     }
   };
@@ -305,8 +306,13 @@ export function BookmarkManager() {
   const handleExport = async (format: 'json' | 'html' | 'markdown') => {
     try {
       await ImportExportService.downloadBookmarks(format);
+      toast({ title: 'Export ready', description: `Bookmarks exported as ${format.toUpperCase()}` });
     } catch (error) {
-      alert('Export failed: ' + (error instanceof Error ? error.message : 'Unknown error'));
+      toast({
+        variant: 'destructive',
+        title: 'Export failed',
+        description: error instanceof Error ? error.message : 'Unknown error',
+      });
     }
   };
 
@@ -323,10 +329,14 @@ export function BookmarkManager() {
           } else {
             await ImportExportService.importFromFile(file, selectedFolder || undefined);
           }
-          alert('Import successful!');
           await refreshBookmarks();
+          toast({ title: 'Import successful' });
         } catch (error) {
-          alert('Import failed: ' + (error instanceof Error ? error.message : 'Unknown error'));
+          toast({
+            variant: 'destructive',
+            title: 'Import failed',
+            description: error instanceof Error ? error.message : 'Unknown error',
+          });
         }
       }
     };
