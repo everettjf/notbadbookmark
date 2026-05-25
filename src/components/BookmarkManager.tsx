@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { motion } from 'framer-motion';
 import {
   DndContext,
@@ -30,7 +30,11 @@ import { BookmarkNode, BookmarkService } from '@/lib/bookmarks';
 import { ImportExportService } from '@/lib/import-export';
 import { TagStore, filterByTags } from '@/lib/tags';
 import { TagFilter } from '@/components/TagFilter';
+import { VirtualBookmarkGrid } from '@/components/VirtualBookmarkGrid';
 import { toast } from '@/hooks/use-toast';
+
+// Above this many bookmarks in one view, switch to row virtualization.
+const VIRTUALIZE_THRESHOLD = 150;
 import { ThemeToggle } from '@/components/ThemeToggle';
 import { SortDropdown, SortOption } from '@/components/SortDropdown';
 import { ExportDropdown } from '@/components/ExportDropdown';
@@ -52,6 +56,7 @@ export function BookmarkManager() {
   } = useBookmarks();
 
   const tags = useTags();
+  const contentRef = useRef<HTMLDivElement>(null);
 
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
   const [selectedFolder, setSelectedFolder] = useState<string | null>(null);
@@ -324,13 +329,16 @@ export function BookmarkManager() {
       const file = (e.target as HTMLInputElement).files?.[0];
       if (file) {
         try {
-          if (file.name.endsWith('.html')) {
-            await ImportExportService.importNetscapeBookmarks(file, selectedFolder || undefined);
-          } else {
-            await ImportExportService.importFromFile(file, selectedFolder || undefined);
-          }
+          const result = file.name.endsWith('.html')
+            ? await ImportExportService.importNetscapeBookmarks(file, selectedFolder || undefined)
+            : await ImportExportService.importFromFile(file, selectedFolder || undefined);
           await refreshBookmarks();
-          toast({ title: 'Import successful' });
+          toast({
+            title: 'Import complete',
+            description:
+              `Added ${result.imported} bookmark${result.imported === 1 ? '' : 's'}` +
+              (result.skipped > 0 ? `, skipped ${result.skipped} duplicate${result.skipped === 1 ? '' : 's'}` : ''),
+          });
         } catch (error) {
           toast({
             variant: 'destructive',
@@ -345,11 +353,24 @@ export function BookmarkManager() {
 
   const handleDragEnd = async (event: DragEndEvent) => {
     const { active, over } = event;
+    if (!over) return;
 
-    if (active.id !== over?.id) {
+    const overId = String(over.id);
+
+    // Dropped onto a folder (sidebar row or subfolder card): move into it.
+    if (overId.startsWith('folder:')) {
+      const folderId = overId.slice('folder:'.length);
+      if (folderId === active.id) return;
+      await moveBookmark(active.id as string, { parentId: folderId });
+      const folder = folders.find(f => f.id === folderId);
+      toast({ title: 'Moved', description: folder ? `Into “${folder.title}”` : 'Into folder' });
+      return;
+    }
+
+    if (active.id !== over.id) {
       const oldIndex = filteredBookmarks.findIndex(bookmark => bookmark.id === active.id);
-      const newIndex = filteredBookmarks.findIndex(bookmark => bookmark.id === over?.id);
-      
+      const newIndex = filteredBookmarks.findIndex(bookmark => bookmark.id === over.id);
+
       if (oldIndex !== -1 && newIndex !== -1) {
         // Reordering only makes sense against the actual stored order, so pin
         // the view to manual order before persisting the move.
@@ -361,6 +382,21 @@ export function BookmarkManager() {
       }
     }
   };
+
+  const renderBookmark = (bookmark: BookmarkNode) => (
+    <DraggableBookmarkItem
+      bookmark={bookmark}
+      tags={tags.tagMap[bookmark.id]}
+      onEdit={handleEditBookmark}
+      onDelete={handleDeleteBookmark}
+      onShare={handleShareBookmark}
+      onCopy={handleCopyBookmark}
+      className={viewMode === 'list' ? 'w-full' : ''}
+      isSelected={selectedBookmarks.has(bookmark.id)}
+      isSelectionMode={isSelectionMode}
+      onToggleSelection={handleToggleSelection}
+    />
+  );
 
   if (error) {
     return (
@@ -377,6 +413,7 @@ export function BookmarkManager() {
   }
 
   return (
+    <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
     <div className="w-full h-full flex bg-background">
       {/* Sidebar */}
       {sidebarOpen && (
@@ -546,7 +583,7 @@ export function BookmarkManager() {
         </motion.div>
 
         {/* Content Area */}
-        <div className="flex-1 overflow-auto pt-2 px-3 pb-4">
+        <div ref={contentRef} className="flex-1 overflow-auto pt-2 px-3 pb-4">
           {isLoading ? (
             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-1.5">
               {Array.from({ length: 18 }).map((_, i) => (
@@ -554,11 +591,6 @@ export function BookmarkManager() {
               ))}
             </div>
           ) : (
-            <DndContext
-              sensors={sensors}
-              collisionDetection={closestCenter}
-              onDragEnd={handleDragEnd}
-            >
               <SortableContext
                 items={filteredBookmarks.map(b => b.id)}
                 strategy={viewMode === 'grid' ? rectSortingStrategy : verticalListSortingStrategy}
@@ -598,28 +630,29 @@ export function BookmarkManager() {
                           BOOKMARKS
                         </h3>
                       )}
-                      <div className={`${
-                        viewMode === 'grid' 
-                          ? 'grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-1.5'
-                          : 'space-y-1'
-                      }`}>
-                        {filteredBookmarks.map((bookmark, index) => (
-                          <BlurFade key={bookmark.id} delay={skipAnimation ? 0 : (currentSubfolders.length + index) * 0.01}>
-                            <DraggableBookmarkItem
-                              bookmark={bookmark}
-                              tags={tags.tagMap[bookmark.id]}
-                              onEdit={handleEditBookmark}
-                              onDelete={handleDeleteBookmark}
-                              onShare={handleShareBookmark}
-                              onCopy={handleCopyBookmark}
-                              className={viewMode === 'list' ? 'w-full' : ''}
-                              isSelected={selectedBookmarks.has(bookmark.id)}
-                              isSelectionMode={isSelectionMode}
-                              onToggleSelection={handleToggleSelection}
-                            />
-                          </BlurFade>
-                        ))}
-                      </div>
+                      {filteredBookmarks.length > VIRTUALIZE_THRESHOLD ? (
+                        <VirtualBookmarkGrid
+                          count={filteredBookmarks.length}
+                          viewMode={viewMode}
+                          scrollRef={contentRef}
+                          renderItem={(index) => {
+                            const bookmark = filteredBookmarks[index];
+                            return <React.Fragment key={bookmark.id}>{renderBookmark(bookmark)}</React.Fragment>;
+                          }}
+                        />
+                      ) : (
+                        <div className={`${
+                          viewMode === 'grid'
+                            ? 'grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-1.5'
+                            : 'space-y-1'
+                        }`}>
+                          {filteredBookmarks.map((bookmark, index) => (
+                            <BlurFade key={bookmark.id} delay={skipAnimation ? 0 : (currentSubfolders.length + index) * 0.01}>
+                              {renderBookmark(bookmark)}
+                            </BlurFade>
+                          ))}
+                        </div>
+                      )}
                     </div>
                   )}
 
@@ -642,7 +675,6 @@ export function BookmarkManager() {
                   )}
                 </div>
               </SortableContext>
-            </DndContext>
           )}
         </div>
       </div>
@@ -665,5 +697,6 @@ export function BookmarkManager() {
         folders={folders}
       />
     </div>
+    </DndContext>
   );
 }

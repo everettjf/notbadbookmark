@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useDroppable } from '@dnd-kit/core';
 import { BookmarkNode } from '@/lib/bookmarks';
 import { Button } from '@/components/ui/button';
 import {
@@ -43,6 +44,7 @@ function FolderItem({
   const isExpanded = expandedFolders.has(folder.id);
   const isSelected = selectedFolder === folder.id;
   const hasChildren = folder.children && folder.children.some(child => !child.url);
+  const { setNodeRef, isOver } = useDroppable({ id: `folder:${folder.id}` });
 
   const handleClick = () => {
     onFolderSelect(folder.id);
@@ -56,7 +58,7 @@ function FolderItem({
   };
 
   return (
-    <div>
+    <div ref={setNodeRef}>
       <ContextMenu>
         <ContextMenuTrigger asChild>
           <Button
@@ -64,6 +66,7 @@ function FolderItem({
             className={cn(
               "w-full justify-start text-left font-normal h-auto py-1 px-2 rounded-md",
               isSelected && "bg-accent text-accent-foreground",
+              isOver && "ring-2 ring-primary bg-primary/10",
               "hover:bg-accent/50"
             )}
             style={{ paddingLeft: `${0.5 + level * 0.625}rem` }}

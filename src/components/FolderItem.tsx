@@ -1,4 +1,5 @@
 import React from 'react';
+import { useDroppable } from '@dnd-kit/core';
 import { BookmarkNode } from '@/lib/bookmarks';
 import { Card } from '@/components/ui/card';
 import {
@@ -28,14 +29,18 @@ function FolderItemComponent({ folder, onFolderSelect, onEdit, onDelete, classNa
   const bookmarkCount = folder.children?.filter(child => child.url).length || 0;
   const subfolderCount = folder.children?.filter(child => !child.url).length || 0;
 
+  const { setNodeRef, isOver } = useDroppable({ id: `folder:${folder.id}` });
+
   return (
-    <div className="transition-transform duration-200 hover:scale-[1.01] active:scale-[0.99]">
+    <div ref={setNodeRef} className="transition-transform duration-200 hover:scale-[1.01] active:scale-[0.99]">
       <ContextMenu>
         <ContextMenuTrigger asChild>
           <Card
             className={cn(
               "p-1.5 cursor-pointer group border rounded-md transition-colors duration-150",
-              isSelected
+              isOver
+                ? "border-primary ring-2 ring-primary bg-primary/10"
+                : isSelected
                 ? "border-primary bg-primary/5"
                 : "hover:bg-accent/60",
               className

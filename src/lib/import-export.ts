@@ -12,6 +12,11 @@ interface ParsedBookmark {
   children?: ParsedBookmark[];
 }
 
+export interface ImportResult {
+  imported: number;
+  skipped: number;
+}
+
 export class ImportExportService {
   static async exportBookmarks(): Promise<string> {
     const bookmarks = await BookmarkService.getAllBookmarks();
@@ -92,43 +97,62 @@ export class ImportExportService {
     }
   }
 
+  // Set of URLs already present, used to skip duplicates on import.
+  private static async getExistingUrls(): Promise<Set<string>> {
+    const tree = await BookmarkService.getAllBookmarks();
+    return new Set(
+      BookmarkService.flattenBookmarks(tree)
+        .filter((b) => b.url)
+        .map((b) => b.url!.trim())
+    );
+  }
+
   static async importBookmarks(
-    exportData: BookmarkExport, 
+    exportData: BookmarkExport,
     targetFolderId?: string
-  ): Promise<void> {
+  ): Promise<ImportResult> {
     try {
       const parentId = targetFolderId || '1'; // Default to Bookmarks Bar
-      
+      const existing = await this.getExistingUrls();
+      let imported = 0;
+      let skipped = 0;
+
       for (const bookmark of exportData.bookmarks) {
-        if (bookmark.url) {
-          await BookmarkService.createBookmark({
-            title: bookmark.title,
-            url: bookmark.url,
-            parentId: parentId
-          });
+        if (!bookmark.url) continue;
+        const key = bookmark.url.trim();
+        if (existing.has(key)) {
+          skipped += 1;
+          continue;
         }
+        await BookmarkService.createBookmark({
+          title: bookmark.title,
+          url: bookmark.url,
+          parentId,
+        });
+        existing.add(key);
+        imported += 1;
       }
+      return { imported, skipped };
     } catch (error) {
       console.error('Import failed:', error);
       throw new Error('Failed to import bookmarks');
     }
   }
 
-  static async importFromFile(file: File, targetFolderId?: string): Promise<void> {
+  static async importFromFile(file: File, targetFolderId?: string): Promise<ImportResult> {
     return new Promise((resolve, reject) => {
       const reader = new FileReader();
-      
+
       reader.onload = async (e) => {
         try {
           const content = e.target?.result as string;
           const exportData = this.parseImportFile(content);
-          await this.importBookmarks(exportData, targetFolderId);
-          resolve();
+          resolve(await this.importBookmarks(exportData, targetFolderId));
         } catch (error) {
           reject(error);
         }
       };
-      
+
       reader.onerror = () => reject(new Error('Failed to read file'));
       reader.readAsText(file);
     });
@@ -191,18 +215,34 @@ export class ImportExportService {
     );
   }
 
-  private static async createTree(nodes: ParsedBookmark[], parentId: string): Promise<void> {
+  private static async createTree(
+    nodes: ParsedBookmark[],
+    parentId: string,
+    existing: Set<string>
+  ): Promise<ImportResult> {
+    let imported = 0;
+    let skipped = 0;
     for (const node of nodes) {
       if (node.url) {
+        const key = node.url.trim();
+        if (existing.has(key)) {
+          skipped += 1;
+          continue;
+        }
         await BookmarkService.createBookmark({ title: node.title, url: node.url, parentId });
+        existing.add(key);
+        imported += 1;
       } else {
         const folder = await BookmarkService.createBookmark({ title: node.title, parentId });
-        await this.createTree(node.children || [], folder.id);
+        const result = await this.createTree(node.children || [], folder.id, existing);
+        imported += result.imported;
+        skipped += result.skipped;
       }
     }
+    return { imported, skipped };
   }
 
-  static async importNetscapeBookmarks(file: File, targetFolderId?: string): Promise<void> {
+  static async importNetscapeBookmarks(file: File, targetFolderId?: string): Promise<ImportResult> {
     return new Promise((resolve, reject) => {
       const reader = new FileReader();
 
@@ -210,6 +250,7 @@ export class ImportExportService {
         try {
           const content = e.target?.result as string;
           const parentId = targetFolderId || '1';
+          const existing = await this.getExistingUrls();
 
           const tree = this.parseNetscapeTree(content);
           const flat = this.parseNetscapeBookmarks(content);
@@ -218,17 +259,26 @@ export class ImportExportService {
           // bookmark the flat scan found. Otherwise fall back to a flat import
           // so no bookmark is ever silently dropped.
           if (this.countBookmarks(tree) >= flat.length && tree.length > 0) {
-            await this.createTree(tree, parentId);
+            resolve(await this.createTree(tree, parentId, existing));
           } else {
+            let imported = 0;
+            let skipped = 0;
             for (const bookmark of flat) {
+              const key = bookmark.url.trim();
+              if (existing.has(key)) {
+                skipped += 1;
+                continue;
+              }
               await BookmarkService.createBookmark({
                 title: bookmark.title,
                 url: bookmark.url,
                 parentId,
               });
+              existing.add(key);
+              imported += 1;
             }
+            resolve({ imported, skipped });
           }
-          resolve();
         } catch (error) {
           reject(error);
         }
