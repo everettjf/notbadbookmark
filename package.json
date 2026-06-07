@@ -1,7 +1,7 @@
 {
   "name": "notbadbookmark",
-  "version": "1.0.0",
-  "description": "A better bookmark manager for Chrome",
+  "version": "1.0.1",
+  "description": "A fast, private bookmark manager for Chrome",
   "scripts": {
     "dev": "webpack --mode development --watch",
     "build": "webpack --mode production",

@@ -1,8 +1,8 @@
 {
   "manifest_version": 3,
   "name": "NotBadBookmark",
-  "version": "1.0.0",
-  "description": "A better bookmark manager for Chrome with modern UI and enhanced features",
+  "version": "1.0.1",
+  "description": "A fast, private bookmark manager with folders, tags, drag-and-drop, search, import/export, and dark mode.",
   "permissions": [
     "bookmarks",
     "storage"
