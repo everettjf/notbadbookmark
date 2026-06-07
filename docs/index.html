@@ -1,0 +1,322 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>NotBadBookmark — A genuinely not bad bookmark manager for Chrome</title>
+  <meta name="description" content="Replace Chrome's default bookmark page with a fast, modern manager — folders, tags, drag-and-drop, instant search, import/export, and dark mode. Private and local." />
+  <link rel="icon" type="image/png" href="favicon.png" />
+
+  <!-- Open Graph -->
+  <meta property="og:title" content="NotBadBookmark" />
+  <meta property="og:description" content="A genuinely not bad bookmark manager for Chrome." />
+  <meta property="og:type" content="website" />
+  <meta property="og:url" content="https://everettjf.github.io/NotBadBookmark/" />
+  <meta property="og:image" content="https://everettjf.github.io/NotBadBookmark/icon128.png" />
+
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+
+  <style>
+    :root {
+      --bg: #07100c;
+      --bg-soft: #0e1814;
+      --card: rgba(255, 255, 255, 0.03);
+      --border: rgba(255, 255, 255, 0.08);
+      --text: #e6efe9;
+      --muted: #93a89c;
+      --brand: #10b981;
+      --brand-2: #22c55e;
+      --accent: #5eead4;
+      --radius: 18px;
+    }
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      font-family: 'Inter', system-ui, -apple-system, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.6;
+      overflow-x: hidden;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    /* Ambient gradient glow */
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background:
+        radial-gradient(60% 50% at 50% -10%, rgba(16, 185, 129, 0.25), transparent 70%),
+        radial-gradient(40% 40% at 85% 10%, rgba(34, 197, 94, 0.18), transparent 70%),
+        radial-gradient(40% 40% at 10% 20%, rgba(94, 234, 212, 0.12), transparent 70%);
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    .wrap { position: relative; z-index: 1; max-width: 1080px; margin: 0 auto; padding: 0 24px; }
+
+    /* ---------- NAV ---------- */
+    nav {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 22px 0;
+    }
+    .logo { display: flex; align-items: center; gap: 10px; font-weight: 800; font-size: 18px; letter-spacing: -0.02em; }
+    .logo img { width: 30px; height: 30px; border-radius: 8px; }
+    .nav-links { display: flex; align-items: center; gap: 26px; }
+    .nav-links a { color: var(--muted); text-decoration: none; font-size: 15px; font-weight: 500; transition: color .2s; }
+    .nav-links a:hover { color: var(--text); }
+    .nav-cta {
+      background: var(--text); color: #0a0a0f !important; padding: 9px 18px;
+      border-radius: 999px; font-weight: 700 !important; transition: transform .15s, box-shadow .2s;
+    }
+    .nav-cta:hover { transform: translateY(-1px); box-shadow: 0 8px 24px rgba(255,255,255,0.15); }
+
+    /* ---------- HERO ---------- */
+    header { text-align: center; padding: 70px 0; }
+
+    .badge {
+      display: inline-flex; align-items: center; gap: 8px;
+      padding: 6px 14px; border: 1px solid var(--border); border-radius: 999px;
+      background: var(--card); font-size: 13px; color: var(--muted); margin-bottom: 26px;
+    }
+    .badge .dot { width: 7px; height: 7px; border-radius: 50%; background: #34d399; box-shadow: 0 0 10px #34d399; }
+
+    h1 {
+      font-size: clamp(40px, 7vw, 76px); font-weight: 900; letter-spacing: -0.04em;
+      line-height: 1.02; margin-bottom: 22px;
+    }
+    h1 .grad {
+      background: linear-gradient(120deg, var(--brand) 0%, var(--brand-2) 50%, var(--accent) 100%);
+      -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent;
+    }
+    .subtitle { font-size: clamp(17px, 2.4vw, 21px); color: var(--muted); max-width: 620px; margin: 0 auto 36px; }
+
+    .cta-row { display: flex; gap: 14px; justify-content: center; flex-wrap: wrap; }
+    .btn {
+      display: inline-flex; align-items: center; gap: 9px; padding: 14px 26px;
+      border-radius: 999px; font-weight: 700; font-size: 16px; text-decoration: none;
+      transition: transform .15s, box-shadow .25s, background .2s; cursor: pointer;
+    }
+    .btn-primary {
+      background: linear-gradient(120deg, var(--brand), var(--brand-2));
+      color: #fff; box-shadow: 0 10px 30px rgba(16, 185, 129, 0.4);
+    }
+    .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 16px 40px rgba(16, 185, 129, 0.55); }
+    .btn-ghost { background: var(--card); color: var(--text); border: 1px solid var(--border); }
+    .btn-ghost:hover { transform: translateY(-2px); background: rgba(255,255,255,0.06); }
+
+    /* ---------- BROWSER MOCKUP ---------- */
+    .mockup {
+      margin: 70px auto 0; max-width: 900px;
+      border: 1px solid var(--border); border-radius: 16px; overflow: hidden;
+      background: var(--bg-soft);
+      box-shadow: 0 40px 100px rgba(0,0,0,0.6);
+    }
+    .mockup-bar { display: flex; align-items: center; gap: 8px; padding: 13px 16px; border-bottom: 1px solid var(--border); background: rgba(255,255,255,0.02); }
+    .mockup-bar .d { width: 12px; height: 12px; border-radius: 50%; }
+    .mockup-bar .d:nth-child(1){ background:#ff5f57; } .mockup-bar .d:nth-child(2){ background:#febc2e; } .mockup-bar .d:nth-child(3){ background:#28c840; }
+    .mockup-url { margin-left: 14px; font-family: 'JetBrains Mono', monospace; font-size: 12px; color: var(--muted); background: rgba(255,255,255,0.04); padding: 5px 12px; border-radius: 7px; }
+    .mockup-body { display: grid; grid-template-columns: 200px 1fr; min-height: 320px; }
+    .mock-side { border-right: 1px solid var(--border); padding: 18px 14px; }
+    .mock-side .item { display:flex; align-items:center; gap:9px; padding: 8px 10px; border-radius: 8px; font-size: 14px; color: var(--muted); }
+    .mock-side .item.active { background: rgba(16, 185, 129,0.15); color: var(--text); }
+    .mock-main { padding: 20px; }
+    .mock-search { background: rgba(255,255,255,0.04); border: 1px solid var(--border); border-radius: 9px; padding: 9px 14px; font-size: 13px; color: var(--muted); margin-bottom: 18px; }
+    .mock-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
+    .mock-card { background: var(--card); border: 1px solid var(--border); border-radius: 11px; padding: 14px; }
+    .mock-card .fav { width: 22px; height: 22px; border-radius: 6px; margin-bottom: 10px; background: linear-gradient(120deg, var(--brand), var(--accent)); }
+    .mock-card .t { height: 9px; width: 80%; border-radius: 4px; background: rgba(255,255,255,0.15); margin-bottom: 7px; }
+    .mock-card .u { height: 7px; width: 55%; border-radius: 4px; background: rgba(255,255,255,0.07); }
+    @media (max-width: 640px){ .mockup-body { grid-template-columns: 1fr; } .mock-side { display:none; } .mock-grid { grid-template-columns: repeat(2,1fr); } }
+
+    /* ---------- SECTIONS ---------- */
+    section { padding: 90px 0; }
+    .section-head { text-align: center; max-width: 600px; margin: 0 auto 56px; }
+    .eyebrow { color: var(--brand-2); font-weight: 700; font-size: 14px; letter-spacing: 0.08em; text-transform: uppercase; margin-bottom: 12px; }
+    h2 { font-size: clamp(30px, 5vw, 44px); font-weight: 800; letter-spacing: -0.03em; margin-bottom: 14px; }
+    .section-head p { color: var(--muted); font-size: 17px; }
+
+    .features { display: grid; grid-template-columns: repeat(3, 1fr); gap: 18px; }
+    @media (max-width: 860px){ .features { grid-template-columns: repeat(2, 1fr); } }
+    @media (max-width: 560px){ .features { grid-template-columns: 1fr; } }
+    .feature {
+      background: var(--card); border: 1px solid var(--border); border-radius: var(--radius);
+      padding: 26px; transition: transform .2s, border-color .2s, background .2s;
+    }
+    .feature:hover { transform: translateY(-4px); border-color: rgba(16, 185, 129,0.4); background: rgba(16, 185, 129,0.05); }
+    .feature .ic { font-size: 26px; margin-bottom: 14px; display: block; }
+    .feature h3 { font-size: 18px; font-weight: 700; margin-bottom: 8px; }
+    .feature p { color: var(--muted); font-size: 14.5px; }
+
+    /* ---------- INSTALL ---------- */
+    .install { background: var(--bg-soft); border: 1px solid var(--border); border-radius: 24px; padding: 48px; }
+    .steps { display: grid; grid-template-columns: repeat(2, 1fr); gap: 22px; margin-top: 8px; }
+    @media (max-width: 720px){ .steps { grid-template-columns: 1fr; } }
+    .step { display: flex; gap: 16px; }
+    .step .n {
+      flex-shrink: 0; width: 36px; height: 36px; border-radius: 10px;
+      display: grid; place-items: center; font-weight: 800; font-size: 16px;
+      background: linear-gradient(120deg, var(--brand), var(--brand-2)); color: #fff;
+    }
+    .step h4 { font-size: 16px; margin-bottom: 3px; }
+    .step p { color: var(--muted); font-size: 14px; }
+    code {
+      font-family: 'JetBrains Mono', monospace; font-size: 13px;
+      background: rgba(255,255,255,0.07); padding: 2px 7px; border-radius: 6px; color: var(--accent);
+    }
+    .codeblock {
+      margin-top: 28px; background: #0d0d14; border: 1px solid var(--border); border-radius: 12px;
+      padding: 18px 20px; font-family: 'JetBrains Mono', monospace; font-size: 13.5px; color: #cdd0e0; overflow-x: auto;
+    }
+    .codeblock .c { color: #6b7280; }
+    .codeblock .p { color: var(--brand-2); }
+
+    /* ---------- PRIVACY STRIP ---------- */
+    .privacy { text-align: center; }
+    .privacy .lock { font-size: 40px; margin-bottom: 18px; }
+    .privacy h2 { margin-bottom: 16px; }
+    .privacy p { color: var(--muted); max-width: 560px; margin: 0 auto; font-size: 17px; }
+
+    /* ---------- FOOTER ---------- */
+    footer { border-top: 1px solid var(--border); padding: 40px 0; text-align: center; color: var(--muted); font-size: 14px; }
+    footer a { color: var(--muted); text-decoration: none; }
+    footer a:hover { color: var(--text); }
+    .foot-links { display: flex; gap: 22px; justify-content: center; margin-bottom: 14px; flex-wrap: wrap; }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <nav>
+      <div class="logo"><img src="icon128.png" alt="" />NotBadBookmark</div>
+      <div class="nav-links">
+        <a href="#features">Features</a>
+        <a href="#install">Install</a>
+        <a href="https://github.com/everettjf/NotBadBookmark">GitHub</a>
+        <a class="nav-cta" href="https://chromewebstore.google.com/detail/notbadbookmark/mablekconlhfomebomdjbohbjmgceana">Add to Chrome →</a>
+      </div>
+    </nav>
+
+    <header>
+      <div class="badge"><span class="dot"></span> Manifest V3 · Open source · 100% local</div>
+      <h1>Your bookmarks,<br /><span class="grad">finally not bad.</span></h1>
+      <p class="subtitle">
+        NotBadBookmark replaces Chrome's dated bookmark page with a fast, modern manager —
+        folders, tags, drag-and-drop, instant search, import/export, and dark mode.
+      </p>
+      <div class="cta-row">
+        <a class="btn btn-primary" href="https://chromewebstore.google.com/detail/notbadbookmark/mablekconlhfomebomdjbohbjmgceana">
+          <svg width="20" height="20" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+            <circle cx="24" cy="24" r="9" fill="#fff"/>
+            <path d="M24 4a20 20 0 0 1 17.32 10H24a10 10 0 0 0-9.43 6.66L7.2 12.1A19.97 19.97 0 0 1 24 4z" fill="#fff" opacity=".95"/>
+            <path d="M4 24a20 20 0 0 0 15.1 19.4L26.5 30.6A10 10 0 0 1 14.6 20.7L7.2 12.1A19.92 19.92 0 0 0 4 24z" fill="#fff" opacity=".75"/>
+            <path d="M43.32 14A20 20 0 0 1 19.1 43.4l7.4-12.8A10 10 0 0 0 33 14h10.32z" fill="#fff" opacity=".55"/>
+          </svg>
+          Add to Chrome — it's free
+        </a>
+        <a class="btn btn-ghost" href="#features">Explore features</a>
+      </div>
+      <p style="margin-top:16px; font-size:14px; color:var(--muted);">Available now on the Chrome Web Store · or <a href="#install" style="color:var(--accent); text-decoration:none;">build from source</a></p>
+
+      <!-- Browser mockup -->
+      <div class="mockup">
+        <div class="mockup-bar">
+          <span class="d"></span><span class="d"></span><span class="d"></span>
+          <span class="mockup-url">chrome://bookmarks</span>
+        </div>
+        <div class="mockup-body">
+          <aside class="mock-side">
+            <div class="item active">📁 All Bookmarks</div>
+            <div class="item">📂 Reading List</div>
+            <div class="item">📂 Work</div>
+            <div class="item">📂 Design</div>
+            <div class="item">🏷 #inspiration</div>
+            <div class="item">🏷 #tools</div>
+          </aside>
+          <main class="mock-main">
+            <div class="mock-search">🔍 Search bookmarks…</div>
+            <div class="mock-grid">
+              <div class="mock-card"><div class="fav"></div><div class="t"></div><div class="u"></div></div>
+              <div class="mock-card"><div class="fav"></div><div class="t"></div><div class="u"></div></div>
+              <div class="mock-card"><div class="fav"></div><div class="t"></div><div class="u"></div></div>
+              <div class="mock-card"><div class="fav"></div><div class="t"></div><div class="u"></div></div>
+              <div class="mock-card"><div class="fav"></div><div class="t"></div><div class="u"></div></div>
+              <div class="mock-card"><div class="fav"></div><div class="t"></div><div class="u"></div></div>
+            </div>
+          </main>
+        </div>
+      </div>
+    </header>
+
+    <!-- FEATURES -->
+    <section id="features">
+      <div class="section-head">
+        <div class="eyebrow">Everything you'd want</div>
+        <h2>Built for people with too many bookmarks</h2>
+        <p>Thoughtful features that make organizing — and actually finding — your links effortless.</p>
+      </div>
+      <div class="features">
+        <div class="feature"><span class="ic">🗂</span><h3>Folder management</h3><p>Browse, create, rename, and delete folders in a clean sidebar tree.</p></div>
+        <div class="feature"><span class="ic">🏷</span><h3>Tags</h3><p>Add your own tags on top of Chrome's native folders, then filter by them.</p></div>
+        <div class="feature"><span class="ic">🔍</span><h3>Instant search</h3><p>Real-time filtering across titles and URLs the moment you type.</p></div>
+        <div class="feature"><span class="ic">🖱</span><h3>Drag &amp; drop</h3><p>Reorder bookmarks and drag them across folders, smoothly.</p></div>
+        <div class="feature"><span class="ic">⚡</span><h3>Virtualized grid</h3><p>Buttery scrolling even with thousands of bookmarks.</p></div>
+        <div class="feature"><span class="ic">📥</span><h3>Import &amp; export</h3><p>Import with auto de-dup; export to JSON, HTML, or Markdown.</p></div>
+        <div class="feature"><span class="ic">🌗</span><h3>Dark mode</h3><p>A light / dark toggle that remembers your choice.</p></div>
+        <div class="feature"><span class="ic">↕️</span><h3>Smart sorting</h3><p>Sort by title, URL, or date added — either direction.</p></div>
+        <div class="feature"><span class="ic">🔒</span><h3>Private by design</h3><p>No servers, no tracking. Everything stays in your browser.</p></div>
+      </div>
+    </section>
+
+    <!-- INSTALL -->
+    <section id="install">
+      <div class="section-head">
+        <div class="eyebrow">One click</div>
+        <h2>Get up and running</h2>
+        <p>Install straight from the Chrome Web Store — or build it yourself from source.</p>
+        <div style="margin-top:26px;">
+          <a class="btn btn-primary" href="https://chromewebstore.google.com/detail/notbadbookmark/mablekconlhfomebomdjbohbjmgceana">🧩 Add to Chrome</a>
+        </div>
+      </div>
+      <div class="install">
+        <p style="color:var(--muted); font-size:14px; margin-bottom:4px;">Prefer to build it yourself? Clone the repo and load it unpacked:</p>
+        <div class="codeblock">
+<span class="c"># Clone, install, and build</span><br />
+<span class="p">git</span> clone https://github.com/everettjf/NotBadBookmark.git<br />
+<span class="p">cd</span> NotBadBookmark<br />
+<span class="p">npm</span> install &amp;&amp; <span class="p">npm</span> run build
+        </div>
+        <div class="steps">
+          <div class="step"><div class="n">1</div><div><h4>Open extensions</h4><p>Go to <code>chrome://extensions/</code> in Chrome.</p></div></div>
+          <div class="step"><div class="n">2</div><div><h4>Enable Developer mode</h4><p>Toggle it in the top-right corner.</p></div></div>
+          <div class="step"><div class="n">3</div><div><h4>Load unpacked</h4><p>Select the <code>NotBadBookmark</code> project folder.</p></div></div>
+          <div class="step"><div class="n">4</div><div><h4>Open your bookmarks</h4><p>Visit <code>chrome://bookmarks</code> — now it's NotBadBookmark ✨</p></div></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- PRIVACY -->
+    <section class="privacy">
+      <div class="lock">🔒</div>
+      <h2>Your data never leaves the browser</h2>
+      <p>NotBadBookmark requests only the <code>bookmarks</code> and <code>storage</code> permissions. No host access, no network requests, no analytics — ever.</p>
+    </section>
+  </div>
+
+  <footer>
+    <div class="wrap">
+      <div class="foot-links">
+        <a href="https://github.com/everettjf/NotBadBookmark">GitHub</a>
+        <a href="https://github.com/everettjf/NotBadBookmark/blob/main/PRIVACY_POLICY.md">Privacy</a>
+        <a href="https://github.com/everettjf/NotBadBookmark/blob/main/README.md">Docs</a>
+        <a href="https://github.com/everettjf/NotBadBookmark/issues">Issues</a>
+      </div>
+      <div>MIT Licensed · Built with ❤️ by <a href="https://github.com/everettjf">everettjf</a></div>
+    </div>
+  </footer>
+</body>
+</html>

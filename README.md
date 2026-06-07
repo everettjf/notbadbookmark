@@ -1,179 +1,167 @@
+<div align="center">
+
+<img src="icons/icon128.png" width="96" height="96" alt="NotBadBookmark logo" />
+
 # NotBadBookmark
 
-A modern, elegant Chrome extension that replaces the default bookmark manager with a superior user experience. Built with React, TypeScript, shadcn/ui, and Magic UI components for a clean, compact, and highly functional bookmark management interface.
+### A genuinely *not bad* bookmark manager for Chrome.
 
-## Features
+Replace Chrome's default bookmark page with a fast, modern, keyboard-friendly manager —
+folders, tags, drag-and-drop, instant search, import/export, and dark mode.
 
-- **Modern UI**: Clean, responsive interface built with shadcn/ui and Magic UI components
-- **Fast Search**: Instant bookmark search with real-time filtering
-- **Smooth Animations**: Beautiful transitions and hover effects powered by Framer Motion
-- **Full CRUD Operations**: Add, edit, delete, and organize bookmarks seamlessly
-- **Folder Management**: Organize bookmarks into folders with visual hierarchy
-- **Favicon Support**: Automatic favicon fetching for visual bookmark identification
-- **Compact Design**: Optimized for the Chrome extension popup format
-- **TypeScript**: Full type safety and modern development experience
+<p>
+  <a href="https://chromewebstore.google.com/detail/notbadbookmark/mablekconlhfomebomdjbohbjmgceana">
+    <img alt="Available in the Chrome Web Store" src="https://img.shields.io/badge/Chrome%20Web%20Store-Add%20to%20Chrome-34A853?logo=googlechrome&logoColor=white&style=for-the-badge" />
+  </a>
+</p>
 
-## Tech Stack
+<p>
+  <img alt="Manifest V3" src="https://img.shields.io/badge/Manifest-V3-4285F4?logo=googlechrome&logoColor=white" />
+  <img alt="React 18" src="https://img.shields.io/badge/React-18-61DAFB?logo=react&logoColor=black" />
+  <img alt="TypeScript" src="https://img.shields.io/badge/TypeScript-5-3178C6?logo=typescript&logoColor=white" />
+  <img alt="Tailwind CSS" src="https://img.shields.io/badge/Tailwind-CSS-06B6D4?logo=tailwindcss&logoColor=white" />
+  <img alt="License: MIT" src="https://img.shields.io/badge/License-MIT-green.svg" />
+</p>
 
-- **React 18** - Modern React with hooks and functional components
-- **TypeScript** - Full type safety and excellent developer experience
-- **shadcn/ui** - High-quality, accessible UI components
-- **Magic UI** - Beautiful animated components and effects
-- **Tailwind CSS** - Utility-first CSS framework for rapid styling
-- **Framer Motion** - Smooth animations and transitions
-- **Chrome Extension APIs** - Native bookmark management integration
-- **Webpack** - Modern bundling and build system
+<a href="https://chromewebstore.google.com/detail/notbadbookmark/mablekconlhfomebomdjbohbjmgceana"><b>🧩 Install</b></a> ·
+<a href="https://everettjf.github.io/NotBadBookmark/"><b>🌐 Website</b></a> ·
+<a href="#-features"><b>✨ Features</b></a> ·
+<a href="#-development"><b>🛠 Development</b></a>
 
-## Project Structure
+</div>
+
+---
+
+## ✨ Features
+
+| | |
+|---|---|
+| 🗂 **Folder management** | Browse, create, rename, and delete folders with a clean sidebar tree. |
+| 🏷 **Tags** | Add your own tags on top of Chrome's native folders, then filter by them. |
+| 🔍 **Instant search** | Real-time, fuzzy-friendly filtering across titles and URLs as you type. |
+| 🖱 **Drag & drop** | Reorder bookmarks and drag them **across folders** — powered by dnd-kit. |
+| ⚡ **Virtualized grid** | Smooth scrolling even with thousands of bookmarks (TanStack Virtual). |
+| ↕️ **Sorting** | Sort by title, URL, or date added — ascending or descending. |
+| 📥 **Import / Export** | Import from JSON/HTML with **automatic de-duplication**; export to JSON, HTML, or Markdown. |
+| 🌗 **Dark mode** | Light / dark theme toggle that remembers your choice. |
+| 🔔 **Toasts** | Non-blocking notifications instead of jarring `alert()` popups. |
+| 🎛 **Context menu** | Right-click any bookmark for quick actions. |
+| 🔒 **Local & private** | No servers, no tracking — everything stays in your browser. See [Privacy Policy](PRIVACY_POLICY.md). |
+
+---
+
+## 🚀 Quick Start
+
+### For users — install in one click
+
+**👉 [Add to Chrome from the Chrome Web Store](https://chromewebstore.google.com/detail/notbadbookmark/mablekconlhfomebomdjbohbjmgceana)**
+
+That's it. Open a new bookmarks page (`chrome://bookmarks`) and it's now NotBadBookmark ✨
+
+### For developers — build from source
+
+> **Heads up:** `dist/` is a build artifact and isn't committed. You must build once before loading.
+
+```bash
+# 1. Install dependencies
+npm install
+
+# 2. Build the extension
+npm run build
+```
+
+Then load it in Chrome:
+
+1. Open `chrome://extensions/`
+2. Toggle **Developer mode** (top-right)
+3. Click **Load unpacked** and select this project directory
+4. Open a new bookmarks page (`chrome://bookmarks`) — it's now NotBadBookmark ✨
+
+NotBadBookmark overrides Chrome's built-in bookmarks page via `chrome_url_overrides`,
+so it appears wherever you'd normally open the bookmark manager.
+
+---
+
+## 🛠 Development
+
+```bash
+npm run dev        # Build in watch mode (auto-rebuild on save)
+npm run build      # Production build
+npm run typecheck  # TypeScript type checking (tsc --noEmit)
+npm run lint       # ESLint
+npm run release    # Build + create a distributable .zip
+```
+
+**Workflow:** edit files in `src/` → `npm run dev` rebuilds → hit the **↻ reload** button
+on the extension card in `chrome://extensions/` → refresh the bookmarks page.
+
+### Tech stack
+
+- **React 18** + **TypeScript** — modern, type-safe UI
+- **Tailwind CSS** — utility-first styling with theme variables
+- **shadcn/ui** + **Magic UI** — accessible, animated components
+- **Framer Motion** — micro-interactions and transitions
+- **@dnd-kit** — drag-and-drop
+- **@tanstack/react-virtual** — list virtualization
+- **Webpack** — bundling
+- **Chrome Bookmarks API** (Manifest V3) — native integration
+
+### Project structure
 
 ```
 NotBadBookmark/
-├── manifest.json           # Chrome extension manifest
-├── popup.html             # Extension popup HTML
+├── manifest.json              # MV3 manifest (overrides the bookmarks page)
+├── bookmarks.html             # Entry HTML for the manager UI
 ├── src/
-│   ├── components/
-│   │   ├── ui/            # shadcn/ui and Magic UI components
-│   │   │   ├── button.tsx
-│   │   │   ├── card.tsx
-│   │   │   ├── dialog.tsx
-│   │   │   ├── input.tsx
-│   │   │   ├── blur-fade.tsx
-│   │   │   └── border-beam.tsx
-│   │   ├── BookmarkManager.tsx # Main application component
-│   │   ├── BookmarkItem.tsx # Individual bookmark display
-│   │   ├── DraggableBookmarkItem.tsx # Drag-and-drop wrapper
-│   │   ├── BookmarkDialog.tsx # Add/edit bookmark modal
-│   │   ├── FolderTree.tsx # Sidebar folder navigation
-│   │   └── SearchBar.tsx  # Search input component
-│   ├── hooks/
-│   │   ├── useBookmarks.ts # Bookmark state management hook
-│   │   └── useTheme.ts    # Theme/dark-mode state hook
-│   ├── lib/
-│   │   ├── bookmarks.ts   # Chrome bookmarks API wrapper
-│   │   ├── import-export.ts # JSON/HTML/Markdown import & export
-│   │   └── utils.ts       # Utility functions (cn helper)
-│   ├── globals.css        # Global styles and theme variables
-│   ├── popup.tsx          # Popup entry point
-│   └── background.ts      # Background script
-├── dist/                  # Built extension files
-├── package.json
-├── tsconfig.json          # TypeScript configuration
-├── tsconfig.build.json    # Build-specific TypeScript config
-├── webpack.config.js      # Webpack build configuration
-├── tailwind.config.js     # Tailwind CSS configuration
-└── postcss.config.js      # PostCSS configuration
+│   ├── bookmarks.tsx          # App entry point
+│   ├── background.ts          # Service worker
+│   ├── components/            # UI components (manager, dialogs, tree, grid…)
+│   │   └── ui/                # shadcn/ui + Magic UI primitives
+│   ├── hooks/                 # useBookmarks, useTags, useTheme, use-toast…
+│   ├── lib/                   # Chrome API wrapper, import/export, tags, utils
+│   └── globals.css            # Theme variables & global styles
+├── icons/                     # Extension icons
+├── docs/                      # GitHub Pages landing site
+└── webpack.config.js
 ```
 
-## Development
+---
 
-### Prerequisites
+## 🔐 Permissions
 
-- Node.js 16+ and npm
-- Chrome browser for testing
+| Permission | Why it's needed |
+|---|---|
+| `bookmarks` | Read and modify your bookmarks — the core of the app. |
+| `storage` | Persist your preferences (theme, sort order, tags) locally. |
 
-### Setup
+No host permissions, no network requests, no analytics. Your data never leaves the browser.
 
-1. **Clone and install dependencies:**
-   ```bash
-   npm install
-   ```
+---
 
-2. **Build the extension:**
-   ```bash
-   npm run build
-   ```
+## 🗺 Roadmap
 
-3. **Load the extension in Chrome:**
-   - Open Chrome and navigate to `chrome://extensions/`
-   - Enable "Developer mode" in the top right
-   - Click "Load unpacked" and select this project directory
-   - The extension will appear in your Chrome toolbar
+- [ ] On-device AI auto-tagging & categorization
+- [ ] Command palette + keyboard shortcuts
+- [ ] Dead-link detection
+- [ ] Full-text content search
+- [ ] Internationalization (i18n)
 
-### Development Scripts
+---
 
-- `npm run dev` - Build in development mode with file watching
-- `npm run build` - Build for production
-- `npm run typecheck` - Run TypeScript type checking
-- `npm run lint` - Run ESLint code linting
+## 🤝 Contributing
 
-### Development Workflow
+1. Fork and create a feature branch
+2. Make your changes
+3. `npm run typecheck && npm run lint`
+4. `npm run build`
+5. Open a pull request
 
-1. Make changes to source files in `src/`
-2. Run `npm run dev` for automatic rebuilds
-3. Refresh the extension in Chrome's extension management page
-4. Test changes in the extension popup
+---
 
-## Chrome Extension Features
+## 📄 License
 
-### Permissions
+[MIT](LICENSE) — free to use, modify, and share.
 
-The extension requires these Chrome permissions:
-- `bookmarks` - Read and modify user bookmarks
-- `storage` - Persist UI preferences (theme, view mode, sort order) locally
-
-### API Integration
-
-The extension uses Chrome's Bookmarks API through a clean service layer:
-
-```typescript
-// Read all bookmarks
-const bookmarks = await BookmarkService.getAllBookmarks();
-
-// Search bookmarks
-const results = await BookmarkService.searchBookmarks("query");
-
-// Create bookmark
-await BookmarkService.createBookmark({
-  title: "Example",
-  url: "https://example.com",
-  parentId: folderId
-});
-```
-
-## UI Components
-
-### Key Components
-
-- **BookmarkItem**: Individual bookmark display with favicon, title, URL, and action buttons
-- **SearchBar**: Real-time search with clear functionality
-- **BookmarkDialog**: Modal for adding and editing bookmarks
-- **BlurFade**: Animated component wrapper for smooth reveal effects
-- **BorderBeam**: Animated border effect for visual enhancement
-
-### Design System
-
-The extension follows shadcn/ui design principles:
-- Consistent spacing and typography
-- Accessible color schemes with dark mode support
-- Responsive design patterns
-- Smooth animations and micro-interactions
-
-## Installation for End Users
-
-1. Download the extension files
-2. Open Chrome and go to `chrome://extensions/`
-3. Enable "Developer mode"
-4. Click "Load unpacked" and select the extension directory
-5. Pin the extension to your toolbar for easy access
-
-## Future Enhancements
-
-- Tag system (metadata beyond Chrome's native folders)
-- On-device AI auto-tagging and categorization
-- Command palette and keyboard shortcuts
-- Dead-link detection
-- Internationalization (i18n)
-- Full-text content search
-
-## Contributing
-
-1. Fork the repository
-2. Create a feature branch
-3. Make your changes
-4. Run tests: `npm run typecheck && npm run lint`
-5. Build: `npm run build`
-6. Submit a pull request
-
-## License
-
-MIT License - feel free to use and modify as needed.
+<div align="center">
+<sub>Built with ❤️ for people who have too many bookmarks.</sub>
+</div>
