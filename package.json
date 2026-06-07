@@ -2,6 +2,25 @@
   "name": "notbadbookmark",
   "version": "1.0.1",
   "description": "A fast, private bookmark manager for Chrome",
+  "author": "everettjf",
+  "license": "MIT",
+  "homepage": "https://everettjf.github.io/NotBadBookmark/",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/everettjf/NotBadBookmark.git"
+  },
+  "bugs": {
+    "url": "https://github.com/everettjf/NotBadBookmark/issues"
+  },
+  "keywords": [
+    "chrome-extension",
+    "bookmark-manager",
+    "bookmarks",
+    "manifest-v3",
+    "react",
+    "typescript",
+    "productivity"
+  ],
   "scripts": {
     "dev": "webpack --mode development --watch",
     "build": "webpack --mode production",
