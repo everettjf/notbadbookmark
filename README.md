@@ -4,6 +4,8 @@
 
 # NotBadBookmark
 
+Repository: <https://github.com/everettjf/notbadbookmark>
+
 ### A genuinely *not bad* bookmark manager for Chrome.
 
 Replace Chrome's default bookmark page with a fast, modern, keyboard-friendly manager —
