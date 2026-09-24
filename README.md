@@ -1,169 +1,63 @@
-<div align="center">
-
-<img src="icons/icon128.png" width="96" height="96" alt="NotBadBookmark logo" />
-
 # NotBadBookmark
 
-Repository: <https://github.com/everettjf/notbadbookmark>
+A local bookmark manager for Chrome, focused on reliable organization, search and portable backups. Replaces `chrome://bookmarks`.
 
-### A genuinely *not bad* bookmark manager for Chrome.
+[Chrome Web Store](https://chromewebstore.google.com/detail/notbadbookmark/mablekconlhfomebomdjbohbjmgceana) · [Website](https://everettjf.github.io/NotBadBookmark/) · [Privacy](PRIVACY_POLICY.md)
 
-Replace Chrome's default bookmark page with a fast, modern, keyboard-friendly manager —
-folders, tags, drag-and-drop, instant search, import/export, and dark mode.
+## Manage and find
 
-<p>
-  <a href="https://chromewebstore.google.com/detail/notbadbookmark/mablekconlhfomebomdjbohbjmgceana">
-    <img alt="Available in the Chrome Web Store" src="https://img.shields.io/badge/Chrome%20Web%20Store-Add%20to%20Chrome-34A853?logo=googlechrome&logoColor=white&style=for-the-badge" />
-  </a>
-</p>
+- Create, edit, rename and move bookmarks and folders. F2 opens editing for a focused bookmark or folder card; Enter saves and Escape cancels. Failed saves keep the form open and explain any partial success.
+- Search titles, URLs and folder paths without leaving the selected folder. Choose whether to include its subfolders. Cmd/Ctrl+F focuses search; Escape clears it. Matching is case-insensitive text matching, not fuzzy or webpage full-text search.
+- Combine domain and tag filters; choose all-tag or any-tag matching. Clear active filters explicitly. Folder results are shown separately.
+- Rename or merge tags globally, or remove a tag without deleting its bookmarks.
+- List and grid views, native-folder navigation, complete path tooltips, keyboard controls and a virtualized large-library view.
+- Drag bookmarks to folders. Reordering is supported only within one folder in Manual order, with filters cleared and subfolder inclusion off.
+- Select all matching editable bookmarks, including items outside the virtualized viewport. Changing search, folder or filters clears selection to avoid hidden bulk deletions.
 
-<p>
-  <img alt="Manifest V3" src="https://img.shields.io/badge/Manifest-V3-4285F4?logo=googlechrome&logoColor=white" />
-  <img alt="React 18" src="https://img.shields.io/badge/React-18-61DAFB?logo=react&logoColor=black" />
-  <img alt="TypeScript" src="https://img.shields.io/badge/TypeScript-5-3178C6?logo=typescript&logoColor=white" />
-  <img alt="Tailwind CSS" src="https://img.shields.io/badge/Tailwind-CSS-06B6D4?logo=tailwindcss&logoColor=white" />
-  <img alt="License: MIT" src="https://img.shields.io/badge/License-MIT-green.svg" />
-</p>
+## Delete and recover
 
-<a href="https://chromewebstore.google.com/detail/notbadbookmark/mablekconlhfomebomdjbohbjmgceana"><b>🧩 Install</b></a> ·
-<a href="https://everettjf.github.io/NotBadBookmark/"><b>🌐 Website</b></a> ·
-<a href="#-features"><b>✨ Features</b></a> ·
-<a href="#-development"><b>🛠 Development</b></a>
+Deletion asks once and displays recursive item counts. A local snapshot must be saved successfully before an item is removed. Recovery restores folders, bookmarks and tags; Chrome allocates new IDs and creation dates. If the original parent is unavailable, choose a new destination.
 
-</div>
+Recovery records persist across manager reloads but remain in this browser profile. A crash during a creation checkpoint can leave an ambiguous result; recovery stops and asks you to inspect/export the snapshot rather than silently duplicating data. Storage exhaustion prevents deletion before it starts. Browser changes and extension metadata are not one atomic transaction.
 
----
+## Import and export
 
-## ✨ Features
-
-| | |
+| Format | Purpose |
 |---|---|
-| 🗂 **Folder management** | Browse, create, rename, and delete folders with a clean sidebar tree. |
-| 🏷 **Tags** | Add your own tags on top of Chrome's native folders, then filter by them. |
-| 🔍 **Instant search** | Real-time, fuzzy-friendly filtering across titles and URLs as you type. |
-| 🖱 **Drag & drop** | Reorder bookmarks and drag them **across folders** — powered by dnd-kit. |
-| ⚡ **Virtualized grid** | Smooth scrolling even with thousands of bookmarks (TanStack Virtual). |
-| ↕️ **Sorting** | Sort by title, URL, or date added — ascending or descending. |
-| 📥 **Import / Export** | Import from JSON/HTML with **automatic de-duplication**; export to JSON, HTML, or Markdown. |
-| 🌗 **Dark mode** | Light / dark theme toggle that remembers your choice. |
-| 🔔 **Toasts** | Non-blocking notifications instead of jarring `alert()` popups. |
-| 🎛 **Context menu** | Right-click any bookmark for quick actions. |
-| 🔒 **Local & private** | No servers, no tracking — everything stays in your browser. See [Privacy Policy](PRIVACY_POLICY.md). |
+| JSON v2 | Full backup with nested folders, empty folders, ordering and tags. Legacy flat/tree JSON remains readable. |
+| Browser HTML | Folder/link exchange using Netscape bookmark format. Custom tags are not portable through HTML. |
+| Markdown | Human-readable sharing copy, not a restore format. |
 
----
+Export all, the current folder with descendants, or selected bookmarks. Import validates the whole file before writing, previews counts and expected duplicates, and lets you choose a destination and duplicate policy. Default imports use a separate folder. Skip policies merge uniquely named destination folders; ambiguous same-name folders are not guessed. URLs are compared exactly after trimming surrounding whitespace, without stripping query parameters or fragments.
 
-## 🚀 Quick Start
+Imports support cancellation between items and report successful, skipped and failed work. Existing data is never deleted by import. Completed changes remain after cancellation or failure; inspect the report before retrying. **Recovery → Recent import reports** retains the latest 20 runs and flags interrupted runs. Import currently accepts JSON and HTML up to 25 MB, 100,000 nodes and 64 folder levels.
 
-### For users — install in one click
+## Local data
 
-**👉 [Add to Chrome from the Chrome Web Store](https://chromewebstore.google.com/detail/notbadbookmark/mablekconlhfomebomdjbohbjmgceana)**
+The extension has no analytics or server. It uses local placeholder icons and does not fetch third-party favicons. Chrome can synchronize native bookmarks according to your browser settings; extension tags, recovery records and preferences remain local. Export JSON before clearing extension data or uninstalling.
 
-That's it. Open a new bookmarks page (`chrome://bookmarks`) and it's now NotBadBookmark ✨
+## Develop and validate
 
-### For developers — build from source
-
-> **Heads up:** `dist/` is a build artifact and isn't committed. You must build once before loading.
-
-```bash
-# 1. Install dependencies
-npm install
-
-# 2. Build the extension
+```sh
+npm ci
+npm run typecheck
+npm run lint
+npm test
 npm run build
+npm run release
 ```
 
-Then load it in Chrome:
+Load the project directory as an unpacked extension in a **dedicated test profile**, after building. Do not run destructive tests against a personal library.
 
-1. Open `chrome://extensions/`
-2. Toggle **Developer mode** (top-right)
-3. Click **Load unpacked** and select this project directory
-4. Open a new bookmarks page (`chrome://bookmarks`) — it's now NotBadBookmark ✨
+For a browser preview backed only by synthetic data:
 
-NotBadBookmark overrides Chrome's built-in bookmarks page via `chrome_url_overrides`,
-so it appears wherever you'd normally open the bookmark manager.
-
----
-
-## 🛠 Development
-
-```bash
-npm run dev        # Build in watch mode (auto-rebuild on save)
-npm run build      # Production build
-npm run typecheck  # TypeScript type checking (tsc --noEmit)
-npm run lint       # ESLint
-npm run release    # Build + create a distributable .zip
+```sh
+npm run preview:qa
+# http://127.0.0.1:4178/tests/preview.html
 ```
 
-**Workflow:** edit files in `src/` → `npm run dev` rebuilds → hit the **↻ reload** button
-on the extension card in `chrome://extensions/` → refresh the bookmarks page.
+The preview replaces Chrome APIs with a test adapter. It verifies browser rendering and interaction, not native Chrome synchronization. Tests cover API failures, import/export round trips, recovery, filtering, input composition and form/selection behavior. See [validation notes](docs/reliability-validation.md) for coverage and limits.
 
-### Tech stack
+## Future work
 
-- **React 18** + **TypeScript** — modern, type-safe UI
-- **Tailwind CSS** — utility-first styling with theme variables
-- **shadcn/ui** + **Magic UI** — accessible, animated components
-- **Framer Motion** — micro-interactions and transitions
-- **@dnd-kit** — drag-and-drop
-- **@tanstack/react-virtual** — list virtualization
-- **Webpack** — bundling
-- **Chrome Bookmarks API** (Manifest V3) — native integration
-
-### Project structure
-
-```
-NotBadBookmark/
-├── manifest.json              # MV3 manifest (overrides the bookmarks page)
-├── bookmarks.html             # Entry HTML for the manager UI
-├── src/
-│   ├── bookmarks.tsx          # App entry point
-│   ├── background.ts          # Service worker
-│   ├── components/            # UI components (manager, dialogs, tree, grid…)
-│   │   └── ui/                # shadcn/ui + Magic UI primitives
-│   ├── hooks/                 # useBookmarks, useTags, useTheme, use-toast…
-│   ├── lib/                   # Chrome API wrapper, import/export, tags, utils
-│   └── globals.css            # Theme variables & global styles
-├── icons/                     # Extension icons
-├── docs/                      # GitHub Pages landing site
-└── webpack.config.js
-```
-
----
-
-## 🔐 Permissions
-
-| Permission | Why it's needed |
-|---|---|
-| `bookmarks` | Read and modify your bookmarks — the core of the app. |
-| `storage` | Persist your preferences (theme, sort order, tags) locally. |
-
-No host permissions, no network requests, no analytics. Your data never leaves the browser.
-
----
-
-## 🗺 Roadmap
-
-- [ ] On-device AI auto-tagging & categorization
-- [ ] Command palette + keyboard shortcuts
-- [ ] Dead-link detection
-- [ ] Full-text content search
-- [ ] Internationalization (i18n)
-
----
-
-## 🤝 Contributing
-
-1. Fork and create a feature branch
-2. Make your changes
-3. `npm run typecheck && npm run lint`
-4. `npm run build`
-5. Open a pull request
-
----
-
-## 📄 License
-
-[MIT](LICENSE) — free to use, modify, and share.
-
-<div align="center">
-<sub>Built with ❤️ for people who have too many bookmarks.</sub>
-</div>
+Saved queries, richer keyboard navigation, and optional AI classification can follow the reliable core. This release does not fetch webpage contents, scan dead links, or provide AI search.

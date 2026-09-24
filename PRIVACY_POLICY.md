@@ -1,72 +1,26 @@
 # Privacy Policy for NotBadBookmark
 
-**Effective Date:** September 2, 2024
+Effective date: September 24, 2026 (version 1.1.0).
 
-## Introduction
+NotBadBookmark has no account, analytics, advertising, or developer-operated backend. The extension does not send bookmark titles, URLs, tags, or recovery snapshots to our servers. Website icons use local placeholders; this version does not request Google's favicon service.
 
-NotBadBookmark ("we," "our," or "us") is committed to protecting your privacy. This Privacy Policy explains how we handle information when you use our Chrome extension.
+## Storage and browser synchronization
 
-## Information We Collect
+Bookmarks are read and written through Chrome's native bookmark store. Chrome may synchronize those bookmarks according to your browser and account settings. This is separate from NotBadBookmark's local metadata.
 
-**We do not collect, store, or transmit any personal information.**
+Tags are stored in the extension's IndexedDB database. UI preferences, deletion recovery snapshots (including titles, URLs, folder structure and tags), and recent import reports are stored in `chrome.storage.local`. They are not synchronized by this extension. Import reports retain the latest 20 operations. Recovery snapshots remain local until extension data is removed; export an independent JSON backup before clearing extension data or uninstalling.
 
-NotBadBookmark operates entirely on your local device and does not send any data to external servers.
+## Actions you control
 
-## How We Use Information
+Import reads a file you choose and adds its bookmarks to Chrome. Export writes a file to your device; JSON backups include tags and folder structure. You decide whether and where to share that file. Opening a bookmark navigates to that website, whose own privacy policy applies. Copying a link writes it to your system clipboard.
 
-Since we don't collect any information, we don't use any information.
+## Permissions
 
-## Information Sharing
+- `bookmarks`: read, create, edit, move and remove bookmarks and folders.
+- `storage`: save preferences, local recovery snapshots and import reports.
 
-We do not share any information because we don't collect any information.
+The extension does not request host permissions or scan website contents. Recovery depends on local storage being available and cannot restore original Chrome IDs or native creation dates. It is not a substitute for an independent exported backup.
 
-## Data Storage
+## Contact
 
-All data related to NotBadBookmark is stored locally on your device:
-- Bookmark preferences and settings
-- User interface customizations
-- Extension configuration
-
-## Permissions Used
-
-Our extension requires the following permissions:
-
-- **bookmarks**: To read and manage your bookmarks
-- **storage**: To persist your UI preferences (theme, view mode, sort order) locally
-
-These permissions are necessary for the core functionality of the extension and do not involve any data collection or transmission.
-
-## Third-Party Services
-
-We do not use any analytics or tracking tools.
-
-To display website icons (favicons), the extension may request favicon images
-from Google's public favicon service (`https://www.google.com/s2/favicons`).
-This sends only the domain of a bookmarked site, never the full URL or any
-personal data. No other third-party services are used.
-
-## Data Security
-
-Since no data leaves your device, there are no external security concerns. Your data remains under your control at all times.
-
-## Children's Privacy
-
-NotBadBookmark is not intended for use by children under 13. We do not knowingly collect any personal information from children under 13.
-
-## Changes to This Policy
-
-We may update this Privacy Policy from time to time. We will notify users of any material changes by updating the version number of the extension.
-
-## Contact Information
-
-If you have any questions about this Privacy Policy, please contact us at:
-
-[Your Contact Information]
-
-## Your Rights
-
-Since we don't collect any personal information, there is no personal data to access, modify, or delete. You have complete control over all data stored locally on your device.
-
----
-
-*This Privacy Policy is effective as of September 2, 2024.*
+For product or privacy questions, contact the maintainer through [GitHub issues](https://github.com/everettjf/notbadbookmark/issues). Do not attach a personal bookmark backup to a public issue.

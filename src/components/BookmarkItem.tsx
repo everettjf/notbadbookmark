@@ -1,5 +1,5 @@
 import React from 'react';
-import { BookmarkNode } from '@/lib/bookmarks';
+import { BookmarkNode, canEdit, domainOf } from '@/lib/bookmarks';
 import { Card } from '@/components/ui/card';
 import {
   ContextMenu,
@@ -13,6 +13,9 @@ import { cn } from '@/lib/utils';
 
 interface BookmarkItemProps {
   bookmark: BookmarkNode;
+  path?: string;
+  query?: string;
+  onLocate?: () => void;
   tags?: string[];
   onEdit?: (bookmark: BookmarkNode) => void;
   onDelete?: (bookmark: BookmarkNode) => void;
@@ -25,25 +28,22 @@ interface BookmarkItemProps {
   onToggleSelection?: (bookmarkId: string) => void;
 }
 
-function BookmarkItemComponent({ bookmark, tags, onEdit, onDelete, onShare, onCopy, className, isDragHandle, dragHandleProps, isSelectionMode, onToggleSelection }: BookmarkItemProps) {
+function BookmarkItemComponent({ bookmark, path, query, onLocate, tags, onEdit, onDelete, onShare, onCopy, className, isDragHandle, dragHandleProps, isSelectionMode, onToggleSelection }: BookmarkItemProps) {
   const openBookmark = () => {
     if (bookmark.url) {
       chrome.tabs.create({ url: bookmark.url });
     }
   };
 
-  const getFavicon = (url?: string) => {
-    if (!url) return undefined;
-    try {
-      const domain = new URL(url).hostname;
-      return `https://www.google.com/s2/favicons?domain=${domain}&sz=16`;
-    } catch {
-      return undefined;
-    }
+  const highlight = (value: string) => {
+    const needle = query?.trim();
+    if (!needle) return value;
+    const start = value.toLocaleLowerCase().indexOf(needle.toLocaleLowerCase());
+    return start < 0 ? value : <>{value.slice(0, start)}<mark>{value.slice(start, start + needle.length)}</mark>{value.slice(start + needle.length)}</>;
   };
 
   return (
-    <div className="transition-transform duration-200 hover:scale-[1.01] active:scale-[0.99]">
+    <div className="transition-colors duration-150">
       <ContextMenu>
         <ContextMenuTrigger asChild>
           <Card className={cn("relative p-1.5 hover:bg-accent/60 group border rounded-md transition-colors duration-150", className)}>
@@ -59,32 +59,25 @@ function BookmarkItemComponent({ bookmark, tags, onEdit, onDelete, onShare, onCo
 
               <div className="flex-shrink-0">
                 <div className="w-5 h-5 rounded bg-muted/60 ring-1 ring-border/60 flex items-center justify-center overflow-hidden">
-                  {bookmark.url ? (
-                    <img
-                      src={getFavicon(bookmark.url)}
-                      alt=""
-                      className="w-3.5 h-3.5"
-                      onError={(e) => {
-                        const target = e.target as HTMLImageElement;
-                        target.style.display = 'none';
-                        target.nextElementSibling?.classList.remove('hidden');
-                      }}
-                    />
-                  ) : null}
-                  <Link className={`w-3 h-3 text-muted-foreground ${bookmark.url ? 'hidden' : ''}`} />
+                  <Link className="w-3 h-3 text-muted-foreground" />
                 </div>
               </div>
 
               <div
-                className="flex-1 min-w-0 cursor-pointer"
+                role="button" tabIndex={0}
+                aria-label={`Open ${bookmark.title}`}
+                title={`${bookmark.title}\n${bookmark.url || ''}\n${path || ''}`}
+                onKeyDown={e => { if (e.key === 'F2' && canEdit(bookmark)) { e.preventDefault(); onEdit?.(bookmark); } else if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); if (isSelectionMode) onToggleSelection?.(bookmark.id); else openBookmark(); } }}
+                className="flex-1 min-w-0 cursor-pointer focus-visible:outline focus-visible:outline-2"
                 onClick={isSelectionMode ? () => onToggleSelection?.(bookmark.id) : openBookmark}
               >
-                <h3 className="font-medium text-[13px] leading-tight truncate">{bookmark.title}</h3>
+                <h3 className="font-medium text-[13px] leading-tight truncate">{highlight(bookmark.title)}</h3>
                 {bookmark.url && (
                   <p className="text-[11px] leading-tight text-muted-foreground truncate mt-0.5">
-                    {new URL(bookmark.url).hostname}
+                    {highlight(domainOf(bookmark.url))}
                   </p>
                 )}
+                {path && <p className="text-[11px] text-muted-foreground truncate">{highlight(path)}</p>}
                 {tags && tags.length > 0 && (
                   <div className="flex flex-wrap items-center gap-1 mt-1">
                     {tags.slice(0, 3).map((tag) => (
@@ -106,6 +99,7 @@ function BookmarkItemComponent({ bookmark, tags, onEdit, onDelete, onShare, onCo
         </ContextMenuTrigger>
         
         <ContextMenuContent className="w-48">
+          {onLocate && <ContextMenuItem onClick={onLocate}>Show in folder</ContextMenuItem>}
           <ContextMenuItem onClick={() => openBookmark()}>
             <Link className="h-4 w-4 mr-2" />
             Open
@@ -127,7 +121,7 @@ function BookmarkItemComponent({ bookmark, tags, onEdit, onDelete, onShare, onCo
             </>
           )}
           
-          <ContextMenuItem onClick={() => onEdit?.(bookmark)}>
+          <ContextMenuItem disabled={!canEdit(bookmark)} onClick={() => onEdit?.(bookmark)}>
             <Edit className="h-4 w-4 mr-2" />
             Edit
           </ContextMenuItem>
@@ -135,6 +129,7 @@ function BookmarkItemComponent({ bookmark, tags, onEdit, onDelete, onShare, onCo
           <ContextMenuSeparator />
           
           <ContextMenuItem 
+            disabled={!canEdit(bookmark)}
             onClick={() => onDelete?.(bookmark)}
             className="text-destructive focus:text-destructive"
           >

@@ -1,352 +1,170 @@
-import { BookmarkNode, BookmarkService } from './bookmarks';
+import { BookmarkNode, BookmarkService, canContain, messageOf, validURL } from './bookmarks';
+import { TagMap, TagStore } from './tags';
 
-export interface BookmarkExport {
-  version: string;
-  exportDate: string;
-  bookmarks: BookmarkNode[];
+export interface PortableNode { title: string; url?: string; children?: PortableNode[]; tags?: string[]; dateAdded?: number; }
+export interface BookmarkExport { version: string; exportDate: string; scope?: string; bookmarks: PortableNode[]; }
+export type DuplicatePolicy = 'keep' | 'folder' | 'global';
+export interface ImportResult { imported: number; folders: number; skipped: number; errors: string[]; cancelled: boolean; createdIds: string[]; }
+export interface ImportProgress { completed: number; total: number; }
+export function countNodes(nodes: PortableNode[]): number { return nodes.reduce((n, b) => n + 1 + countNodes(b.children || []), 0); }
+const escapeHTML = (s: string) => s.replace(/[&<>"']/g, c => ({'&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;'}[c]!));
+
+// Export browser root containers as ordinary folders so their grouping is retained.
+export function exportTree(nodes: BookmarkNode[], tags: TagMap): PortableNode[] {
+  return nodes.flatMap(n => n.id === '0' ? exportTree(n.children || [], tags) : [{
+    title: n.title, dateAdded: n.dateAdded,
+    ...(n.url !== undefined ? { url: n.url, tags: tags[n.id] || [] } : { children: exportTree(n.children || [], tags) })
+  }]);
+}
+export function validateNodes(input: unknown, depth = 0, budget = { count: 0 }): PortableNode[] {
+  if (!Array.isArray(input)) throw new Error('Bookmarks must be an array.');
+  if (depth > 64) throw new Error('Folder nesting exceeds 64 levels.');
+  return input.map((raw: unknown) => {
+    if (++budget.count > 100000) throw new Error('Import exceeds 100,000 items. Split the file first.');
+    if (!raw || typeof raw !== 'object') throw new Error('Invalid bookmark entry.');
+    const n = raw as Record<string, unknown>;
+    if (typeof n.title !== 'string') throw new Error('Every item needs a text title.');
+    if (n.url !== undefined && (typeof n.url !== 'string' || !validURL(n.url))) throw new Error(`Invalid URL in “${n.title}”.`);
+    if (n.url !== undefined && n.children !== undefined) throw new Error('An item cannot be both a folder and a bookmark.');
+    if (n.tags !== undefined && (!Array.isArray(n.tags) || n.tags.some(t => typeof t !== 'string'))) throw new Error('Invalid tag list.');
+    return { title: n.title, ...(n.url !== undefined ? { url: n.url as string, tags: (n.tags as string[]) || [] }
+      : { children: validateNodes(n.children || [], depth + 1, budget) }),
+      ...(typeof n.dateAdded === 'number' && Number.isFinite(n.dateAdded) ? { dateAdded: n.dateAdded } : {}) };
+  });
 }
 
-interface ParsedBookmark {
-  title: string;
-  url?: string;
-  children?: ParsedBookmark[];
-}
-
-export interface ImportResult {
-  imported: number;
-  skipped: number;
+export interface ImportPreview { bookmarks: number; folders: number; duplicates: number; }
+export function previewImport(nodes: PortableNode[], existing: BookmarkNode[], parentId: string, policy: DuplicatePolicy, separate: boolean): ImportPreview {
+  const global = new Set(BookmarkService.flattenBookmarks(existing).map(n => n.url!.trim()));
+  const folders = BookmarkService.getFolders(existing);
+  const report = { bookmarks: 0, folders: 0, duplicates: 0 };
+  const walk = (items: PortableNode[], children: BookmarkNode[]) => {
+    const urls = new Set(children.filter(c => c.url !== undefined).map(c => c.url!.trim()));
+    // Simulate newly created folders too, so repeated folder names match execution.
+    const virtual = children.map(c => ({ ...c, children: c.children ? [...c.children] : undefined }));
+    for (const n of items) {
+      if (n.url !== undefined) {
+        report.bookmarks++;
+        if (policy === 'global' ? global.has(n.url.trim()) : policy === 'folder' && urls.has(n.url.trim())) report.duplicates++;
+        urls.add(n.url.trim()); global.add(n.url.trim());
+      } else {
+        report.folders++;
+        const matches = virtual.filter(c => c.url === undefined && c.title === n.title && canContain(c));
+        const target = policy !== 'keep' && matches.length === 1 ? matches[0] : {id: `preview-${report.folders}`, title:n.title, children: []};
+        if (!virtual.includes(target)) virtual.push(target);
+        walk(n.children || [], target.children || []);
+        // Populate simulated children for subsequent occurrences of the same folder.
+        target.children = [...(target.children || []), ...(n.children || []).map((c,i) => ({id:`virtual-${i}`, ...c}) as BookmarkNode)];
+      }
+    }
+  };
+  walk(nodes, separate ? [] : folders.find(f => f.id === parentId)?.children || []);
+  return report;
 }
 
 export class ImportExportService {
-  static async exportBookmarks(): Promise<string> {
-    const bookmarks = await BookmarkService.getAllBookmarks();
-    
-    const exportData: BookmarkExport = {
-      version: '1.0.0',
-      exportDate: new Date().toISOString(),
-      bookmarks: bookmarks
+  static parseImportFile(content: string): BookmarkExport {
+    let data;
+    try { data = JSON.parse(content); } catch { throw new Error('This file is not valid JSON.'); }
+    if (!data || !['1.0.0', '2.0.0', undefined].includes(data.version)) throw new Error('Unsupported backup version.');
+    return { version: data.version || '1.0.0', exportDate: data.exportDate || '', bookmarks: validateNodes(data.bookmarks) };
+  }
+  static parseNetscapeTree(content: string): PortableNode[] {
+    const doc = new DOMParser().parseFromString(content, 'text/html');
+    const root = doc.querySelector('dl');
+    if (!root) throw new Error('No bookmark folder structure found in this HTML file.');
+    const walk = (dl: Element, depth: number): PortableNode[] => {
+      if (depth > 64) throw new Error('Folder nesting exceeds 64 levels.');
+      const result: PortableNode[] = [];
+      for (const dt of Array.from(dl.children).filter(e => e.tagName === 'DT')) {
+        const h = dt.querySelector(':scope > h3'), a = dt.querySelector(':scope > a');
+        if (h) {
+          const child = dt.querySelector(':scope > dl') || (dt.nextElementSibling?.tagName === 'DL' ? dt.nextElementSibling : null);
+          result.push({ title: h.textContent || '', children: child ? walk(child, depth + 1) : [] });
+        } else if (a) result.push({ title: a.textContent || '', url: a.getAttribute('href') || '' });
+      }
+      return result;
     };
-    
-    return JSON.stringify(exportData, null, 2);
-  }
-
-  static async downloadBookmarks(format: 'json' | 'html' | 'markdown' = 'json'): Promise<void> {
-    try {
-      let content: string;
-      let mimeType: string;
-      let fileExtension: string;
-      
-      const bookmarkTree = await BookmarkService.getAllBookmarks();
-      const allBookmarksFlat = BookmarkService.flattenBookmarks(bookmarkTree);
-      const validBookmarksOnly = allBookmarksFlat.filter(b => b.url); // Only include actual bookmarks, not folders
-      const dateStr = new Date().toISOString().split('T')[0];
-      
-      switch (format) {
-        case 'json': {
-          const exportData: BookmarkExport = {
-            version: '1.0.0',
-            exportDate: new Date().toISOString(),
-            bookmarks: validBookmarksOnly
-          };
-          content = JSON.stringify(exportData, null, 2);
-          mimeType = 'application/json';
-          fileExtension = 'json';
-          break;
-        }
-          
-        case 'html':
-          content = this.exportToHTML(validBookmarksOnly);
-          mimeType = 'text/html';
-          fileExtension = 'html';
-          break;
-          
-        case 'markdown':
-          content = this.exportToMarkdown(validBookmarksOnly);
-          mimeType = 'text/markdown';
-          fileExtension = 'md';
-          break;
-      }
-      
-      const blob = new Blob([content], { type: mimeType });
-      const url = URL.createObjectURL(blob);
-      
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `bookmarks-${dateStr}.${fileExtension}`;
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      URL.revokeObjectURL(url);
-    } catch (error) {
-      console.error('Export failed:', error);
-      throw new Error('Failed to export bookmarks');
-    }
-  }
-
-  static parseImportFile(fileContent: string): BookmarkExport {
-    try {
-      const data = JSON.parse(fileContent);
-      
-      if (!data.bookmarks || !Array.isArray(data.bookmarks)) {
-        throw new Error('Invalid bookmark file format');
-      }
-      
-      return data as BookmarkExport;
-    } catch (error) {
-      throw new Error('Failed to parse bookmark file');
-    }
-  }
-
-  // Set of URLs already present, used to skip duplicates on import.
-  private static async getExistingUrls(): Promise<Set<string>> {
-    const tree = await BookmarkService.getAllBookmarks();
-    return new Set(
-      BookmarkService.flattenBookmarks(tree)
-        .filter((b) => b.url)
-        .map((b) => b.url!.trim())
-    );
-  }
-
-  static async importBookmarks(
-    exportData: BookmarkExport,
-    targetFolderId?: string
-  ): Promise<ImportResult> {
-    try {
-      const parentId = targetFolderId || '1'; // Default to Bookmarks Bar
-      const existing = await this.getExistingUrls();
-      let imported = 0;
-      let skipped = 0;
-
-      for (const bookmark of exportData.bookmarks) {
-        if (!bookmark.url) continue;
-        const key = bookmark.url.trim();
-        if (existing.has(key)) {
-          skipped += 1;
-          continue;
-        }
-        await BookmarkService.createBookmark({
-          title: bookmark.title,
-          url: bookmark.url,
-          parentId,
-        });
-        existing.add(key);
-        imported += 1;
-      }
-      return { imported, skipped };
-    } catch (error) {
-      console.error('Import failed:', error);
-      throw new Error('Failed to import bookmarks');
-    }
-  }
-
-  static async importFromFile(file: File, targetFolderId?: string): Promise<ImportResult> {
-    return new Promise((resolve, reject) => {
-      const reader = new FileReader();
-
-      reader.onload = async (e) => {
-        try {
-          const content = e.target?.result as string;
-          const exportData = this.parseImportFile(content);
-          resolve(await this.importBookmarks(exportData, targetFolderId));
-        } catch (error) {
-          reject(error);
-        }
-      };
-
-      reader.onerror = () => reject(new Error('Failed to read file'));
-      reader.readAsText(file);
-    });
-  }
-
-  // Chrome native bookmark export format support
-  static parseNetscapeBookmarks(htmlContent: string): { title: string; url: string }[] {
-    const parser = new DOMParser();
-    const doc = parser.parseFromString(htmlContent, 'text/html');
-    const links = doc.querySelectorAll('a[href]');
-
-    return Array.from(links).map(link => ({
-      title: link.textContent || 'Untitled',
-      url: link.getAttribute('href') || ''
-    })).filter(bookmark => bookmark.url);
-  }
-
-  // Walk the Netscape DL/DT tree, preserving folder hierarchy. The format omits
-  // end tags, so a folder's child <DL> may be parsed either as a child of its
-  // <DT> or as the next sibling; both layouts are handled.
-  static parseNetscapeTree(htmlContent: string): ParsedBookmark[] {
-    const doc = new DOMParser().parseFromString(htmlContent, 'text/html');
-    const rootDl = doc.querySelector('dl');
-    return rootDl ? this.parseDl(rootDl) : [];
-  }
-
-  private static parseDl(dl: Element): ParsedBookmark[] {
-    const nodes: ParsedBookmark[] = [];
-    const dts = Array.from(dl.children).filter((el) => el.tagName === 'DT');
-
-    for (const dt of dts) {
-      const heading = dt.querySelector(':scope > h3');
-      const anchor = dt.querySelector(':scope > a');
-
-      if (heading) {
-        let childDl = dt.querySelector(':scope > dl');
-        if (!childDl) {
-          let sib = dt.nextElementSibling;
-          while (sib && sib.tagName !== 'DL' && sib.tagName !== 'DT') {
-            sib = sib.nextElementSibling;
-          }
-          if (sib && sib.tagName === 'DL') childDl = sib;
-        }
-        nodes.push({
-          title: heading.textContent || 'Folder',
-          children: childDl ? this.parseDl(childDl) : [],
-        });
-      } else if (anchor) {
-        const url = anchor.getAttribute('href') || '';
-        if (url) nodes.push({ title: anchor.textContent || 'Untitled', url });
-      }
-    }
+    const nodes = validateNodes(walk(root, 0));
+    const links = (ns: PortableNode[]): number => ns.reduce((sum,n) => sum + (n.url !== undefined ? 1 : links(n.children || [])), 0);
+    if (links(nodes) !== doc.querySelectorAll('a[href]').length) throw new Error('This HTML layout could not be read without losing structure. Export a standard browser bookmark HTML file.');
     return nodes;
   }
-
-  private static countBookmarks(nodes: ParsedBookmark[]): number {
-    return nodes.reduce(
-      (sum, node) => sum + (node.url ? 1 : 0) + (node.children ? this.countBookmarks(node.children) : 0),
-      0
-    );
+  static async readFile(file: File): Promise<BookmarkExport> {
+    if (file.size > 25 * 1024 * 1024) throw new Error('Files must be smaller than 25 MB.');
+    const text = await file.text();
+    return /\.html?$/i.test(file.name)
+      ? { version: '2.0.0', exportDate: '', bookmarks: this.parseNetscapeTree(text) }
+      : this.parseImportFile(text);
   }
-
-  private static async createTree(
-    nodes: ParsedBookmark[],
-    parentId: string,
-    existing: Set<string>
-  ): Promise<ImportResult> {
-    let imported = 0;
-    let skipped = 0;
-    for (const node of nodes) {
-      if (node.url) {
-        const key = node.url.trim();
-        if (existing.has(key)) {
-          skipped += 1;
-          continue;
-        }
-        await BookmarkService.createBookmark({ title: node.title, url: node.url, parentId });
-        existing.add(key);
-        imported += 1;
-      } else {
-        const folder = await BookmarkService.createBookmark({ title: node.title, parentId });
-        const result = await this.createTree(node.children || [], folder.id, existing);
-        imported += result.imported;
-        skipped += result.skipped;
-      }
-    }
-    return { imported, skipped };
+  static exportToHTML(nodes: PortableNode[]): string {
+    const walk = (items: PortableNode[]): string => '<DL><p>\n' + items.map(n => n.url !== undefined
+      ? `<DT><A HREF="${escapeHTML(n.url)}">${escapeHTML(n.title)}</A>\n`
+      : `<DT><H3>${escapeHTML(n.title)}</H3>\n${walk(n.children || [])}`).join('') + '</DL><p>\n';
+    return '<!DOCTYPE NETSCAPE-Bookmark-file-1>\n<META HTTP-EQUIV="Content-Type" CONTENT="text/html; charset=UTF-8">\n<TITLE>Bookmarks</TITLE>\n<H1>Bookmarks</H1>\n' + walk(nodes);
   }
-
-  static async importNetscapeBookmarks(file: File, targetFolderId?: string): Promise<ImportResult> {
-    return new Promise((resolve, reject) => {
-      const reader = new FileReader();
-
-      reader.onload = async (e) => {
+  static exportToMarkdown(nodes: PortableNode[]): string {
+    const label = (s: string) => s.replace(/[\\`*_[\]<>]/g, '\\$&').replace(/[\r\n]/g, ' ');
+    const walk = (ns: PortableNode[], level: number): string => ns.map(n => n.url !== undefined
+      ? `${'  '.repeat(level)}- [${label(n.title)}](<${n.url.replace(/[<>\s]/g, c => encodeURIComponent(c))}>)\n`
+      : `${'  '.repeat(level)}- **${label(n.title)}**\n${walk(n.children || [], level + 1)}`).join('');
+    return '# NotBadBookmark Export\n\nReading copy; use JSON for a full backup.\n\n' + walk(nodes, 0);
+  }
+  static async downloadBookmarks(format: 'json' | 'html' | 'markdown', nodes?: BookmarkNode[], scope = 'all', snapshotTags?: TagMap): Promise<void> {
+    const data = exportTree(nodes || await BookmarkService.getAllBookmarks(), snapshotTags || await TagStore.getAllTagsMap());
+    const content = format === 'json' ? JSON.stringify({ version: '2.0.0', exportDate: new Date().toISOString(), scope, bookmarks: data }, null, 2)
+      : format === 'html' ? this.exportToHTML(data) : this.exportToMarkdown(data);
+    const url = URL.createObjectURL(new Blob([content], { type: format === 'html' ? 'text/html;charset=utf-8' : format === 'json' ? 'application/json' : 'text/markdown;charset=utf-8' }));
+    const a = document.createElement('a');
+    a.href = url; a.download = `bookmarks-${scope}-${new Date().toISOString().slice(0,10)}.${format === 'markdown' ? 'md' : format}`;
+    document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(url), 1000);
+  }
+  static async importBookmarks(data: BookmarkExport, parentId: string, policy: DuplicatePolicy = 'folder',
+    progress?: (p: ImportProgress) => void, signal?: AbortSignal): Promise<ImportResult> {
+    const nodes = validateNodes(data.bookmarks);
+    if (!canContain(await BookmarkService.getNode(parentId))) throw new Error('Choose a writable target folder.');
+    const existing = BookmarkService.flattenBookmarks(await BookmarkService.getAllBookmarks());
+    const globalURLs = new Set(existing.map(n => n.url!.trim()));
+    const result: ImportResult = { imported: 0, folders: 0, skipped: 0, errors: [], cancelled: false, createdIds: [] };
+    let pendingTags: TagMap = {};
+    const flushTags = async () => {
+      const batch = pendingTags; pendingTags = {};
+      if (!Object.keys(batch).length) return;
+      try { await TagStore.setMany(batch); }
+      catch (e) { result.errors.push(`Bookmarks created, but tags were not saved for IDs ${Object.keys(batch).join(', ')}: ${messageOf(e)}`); }
+    };
+    let completed = 0;
+    const total = countNodes(nodes);
+    const walk = async (items: PortableNode[], target: string, path: string) => {
+      const children = await BookmarkService.getBookmarksByFolder(target);
+      const urls = new Set(children.filter(n => n.url !== undefined).map(n => n.url!.trim()));
+      for (const n of items) {
+        if (signal?.aborted) { result.cancelled = true; return; }
+        const location = `${path}/${n.title}`;
         try {
-          const content = e.target?.result as string;
-          const parentId = targetFolderId || '1';
-          const existing = await this.getExistingUrls();
-
-          const tree = this.parseNetscapeTree(content);
-          const flat = this.parseNetscapeBookmarks(content);
-
-          // Safety net: only trust the hierarchical walk if it captured every
-          // bookmark the flat scan found. Otherwise fall back to a flat import
-          // so no bookmark is ever silently dropped.
-          if (this.countBookmarks(tree) >= flat.length && tree.length > 0) {
-            resolve(await this.createTree(tree, parentId, existing));
-          } else {
-            let imported = 0;
-            let skipped = 0;
-            for (const bookmark of flat) {
-              const key = bookmark.url.trim();
-              if (existing.has(key)) {
-                skipped += 1;
-                continue;
-              }
-              await BookmarkService.createBookmark({
-                title: bookmark.title,
-                url: bookmark.url,
-                parentId,
-              });
-              existing.add(key);
-              imported += 1;
+          if (n.url !== undefined) {
+            const duplicate = policy === 'global' ? globalURLs.has(n.url.trim()) : policy === 'folder' && urls.has(n.url.trim());
+            if (duplicate) result.skipped++;
+            else {
+              const created = await BookmarkService.createBookmark({ parentId: target, title: n.title, url: n.url });
+              result.imported++; result.createdIds.push(created.id); urls.add(n.url.trim()); globalURLs.add(n.url.trim());
+              if (n.tags?.length) pendingTags[created.id] = n.tags;
+              if (Object.keys(pendingTags).length >= 50) await flushTags();
             }
-            resolve({ imported, skipped });
+          } else {
+            // Only merge a uniquely named folder; ambiguous names must not be guessed.
+            const matches = children.filter(c => c.url === undefined && c.title === n.title && canContain(c));
+            const folder = policy !== 'keep' && matches.length === 1 ? matches[0]
+              : await BookmarkService.createBookmark({ parentId: target, title: n.title });
+            if (!matches.some(m => m.id === folder.id)) { result.folders++; result.createdIds.push(folder.id); children.push(folder); }
+            await walk(n.children || [], folder.id, location);
           }
-        } catch (error) {
-          reject(error);
-        }
-      };
-
-      reader.onerror = () => reject(new Error('Failed to read file'));
-      reader.readAsText(file);
-    });
-  }
-
-  static exportToHTML(bookmarks: BookmarkNode[]): string {
-    const timestamp = new Date().toLocaleString();
-    
-    let html = `<!DOCTYPE NETSCAPE-Bookmark-file-1>
-<META HTTP-EQUIV="Content-Type" CONTENT="text/html; charset=UTF-8">
-<TITLE>Bookmarks</TITLE>
-<H1>Bookmarks</H1>
-<DL><p>
-<DT><H3>NotBadBookmark Export - ${timestamp}</H3>
-<DL><p>
-`;
-
-    bookmarks.forEach(bookmark => {
-      if (bookmark.url) {
-        const addedDate = bookmark.dateAdded ? Math.floor(bookmark.dateAdded / 1000) : '';
-        html += `<DT><A HREF="${bookmark.url}"${addedDate ? ` ADD_DATE="${addedDate}"` : ''}>${bookmark.title}</A>\n`;
+        } catch (e) { result.errors.push(`${location}: ${messageOf(e)}`); }
+        progress?.({ completed: ++completed, total });
       }
-    });
-
-    html += `</DL><p>
-</DL><p>`;
-
-    return html;
-  }
-
-  static exportToMarkdown(bookmarks: BookmarkNode[]): string {
-    const timestamp = new Date().toLocaleString();
-    
-    let markdown = `# NotBadBookmark Export\n\nExported on: ${timestamp}\n\n`;
-    
-    const bookmarksByDomain = new Map<string, BookmarkNode[]>();
-    
-    bookmarks.forEach(bookmark => {
-      if (bookmark.url) {
-        try {
-          const domain = new URL(bookmark.url).hostname;
-          if (!bookmarksByDomain.has(domain)) {
-            bookmarksByDomain.set(domain, []);
-          }
-          bookmarksByDomain.get(domain)!.push(bookmark);
-        } catch {
-          const unknown = 'Unknown';
-          if (!bookmarksByDomain.has(unknown)) {
-            bookmarksByDomain.set(unknown, []);
-          }
-          bookmarksByDomain.get(unknown)!.push(bookmark);
-        }
-      }
-    });
-
-    Array.from(bookmarksByDomain.keys()).sort().forEach(domain => {
-      markdown += `## ${domain}\n\n`;
-      bookmarksByDomain.get(domain)!.forEach(bookmark => {
-        markdown += `- [${bookmark.title}](${bookmark.url})\n`;
-      });
-      markdown += '\n';
-    });
-
-    return markdown;
+    };
+    await walk(nodes, parentId, '');
+    await flushTags();
+    return result;
   }
 }

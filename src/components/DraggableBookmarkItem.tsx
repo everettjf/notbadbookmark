@@ -7,6 +7,10 @@ import { Checkbox } from '@/components/ui/checkbox';
 
 interface DraggableBookmarkItemProps {
   bookmark: BookmarkNode;
+  path?: string;
+  query?: string;
+  onLocate?: () => void;
+  disabled?: boolean;
   tags?: string[];
   onEdit?: (bookmark: BookmarkNode) => void;
   onDelete?: (bookmark: BookmarkNode) => void;
@@ -19,7 +23,7 @@ interface DraggableBookmarkItemProps {
 }
 
 export function DraggableBookmarkItem({
-  bookmark,
+  bookmark, path, query, onLocate, disabled,
   tags,
   onEdit,
   onDelete,
@@ -39,7 +43,7 @@ export function DraggableBookmarkItem({
     isDragging,
   } = useSortable({ 
     id: bookmark.id,
-    disabled: isSelectionMode
+    disabled: isSelectionMode || disabled
   });
 
   const style = {
@@ -62,6 +66,8 @@ export function DraggableBookmarkItem({
         {isSelectionMode && (
           <div className="absolute top-2 left-2 z-10">
             <Checkbox
+              aria-label={`Select ${bookmark.title}`}
+              disabled={disabled}
               checked={isSelected}
               onCheckedChange={handleSelectionToggle}
               className="bg-background border-2"
@@ -72,6 +78,7 @@ export function DraggableBookmarkItem({
         <div className="w-full">
           <BookmarkItem
             bookmark={bookmark}
+            path={path} query={query} onLocate={onLocate}
             tags={tags}
             onEdit={onEdit}
             onDelete={onDelete}
@@ -80,7 +87,7 @@ export function DraggableBookmarkItem({
             className={`${isDragging ? 'ring-2 ring-primary' : ''} ${
               isSelected ? 'ring-2 ring-primary bg-primary/5' : ''
             } ${isSelectionMode ? 'pl-8' : ''}`}
-            isDragHandle={!isSelectionMode}
+            isDragHandle={!isSelectionMode && !disabled}
             dragHandleProps={isSelectionMode ? {} : { ...attributes, ...listeners }}
             isSelectionMode={isSelectionMode}
             onToggleSelection={onToggleSelection}

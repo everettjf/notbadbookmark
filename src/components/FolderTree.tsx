@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useDroppable } from '@dnd-kit/core';
-import { BookmarkNode } from '@/lib/bookmarks';
+import { BookmarkNode, canEdit, canContain } from '@/lib/bookmarks';
 import { Button } from '@/components/ui/button';
 import {
   ContextMenu,
@@ -44,7 +44,7 @@ function FolderItem({
   const isExpanded = expandedFolders.has(folder.id);
   const isSelected = selectedFolder === folder.id;
   const hasChildren = folder.children && folder.children.some(child => !child.url);
-  const { setNodeRef, isOver } = useDroppable({ id: `folder:${folder.id}` });
+  const { setNodeRef, isOver } = useDroppable({ id: `folder:${folder.id}`, disabled: !canContain(folder) });
 
   const handleClick = () => {
     onFolderSelect(folder.id);
@@ -61,8 +61,10 @@ function FolderItem({
     <div ref={setNodeRef}>
       <ContextMenu>
         <ContextMenuTrigger asChild>
-          <Button
-            variant="ghost"
+          <div
+            role="button" tabIndex={0}
+            aria-label={folder.title}
+            onKeyDown={e => { if (e.target === e.currentTarget && (e.key === 'Enter' || e.key === ' ')) { e.preventDefault(); handleClick(); } }}
             className={cn(
               "w-full justify-start text-left font-normal h-auto py-1 px-2 rounded-md",
               isSelected && "bg-accent text-accent-foreground",
@@ -78,6 +80,8 @@ function FolderItem({
                   variant="ghost"
                   size="icon"
                   className="h-4 w-4 p-0 hover:bg-transparent"
+                  aria-label={`${isExpanded ? 'Collapse' : 'Expand'} ${folder.title}`}
+                  aria-expanded={isExpanded}
                   onClick={handleToggle}
                 >
                   {isExpanded ? (
@@ -98,7 +102,7 @@ function FolderItem({
 
               <span className="truncate flex-1 text-[13px]">{folder.title}</span>
             </div>
-          </Button>
+          </div>
         </ContextMenuTrigger>
         
         <ContextMenuContent className="w-48">
@@ -109,12 +113,13 @@ function FolderItem({
           
           <ContextMenuSeparator />
           
-          <ContextMenuItem onClick={() => onEditFolder?.(folder)}>
+          <ContextMenuItem disabled={!canEdit(folder)} onClick={() => onEditFolder?.(folder)}>
             <Edit className="h-4 w-4 mr-2" />
             Rename
           </ContextMenuItem>
           
           <ContextMenuItem 
+            disabled={!canEdit(folder)}
             onClick={() => onDeleteFolder?.(folder)}
             className="text-destructive focus:text-destructive"
           >

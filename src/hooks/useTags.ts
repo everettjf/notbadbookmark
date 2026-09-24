@@ -1,64 +1,31 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { TagStore, TagMap, TagSummary } from '@/lib/tags';
+import { messageOf } from '@/lib/bookmarks';
 
-/**
- * React access to the IndexedDB tag store. Holds the full tag map and a derived
- * tag-frequency summary in state, and exposes mutators that re-sync after each
- * write. This is the read/write API for the (future) tag UI.
- */
 export function useTags() {
   const [tagMap, setTagMap] = useState<TagMap>({});
-  const [allTags, setAllTags] = useState<TagSummary[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-
+  const [error, setError] = useState<string | null>(null);
+  const sequence = useRef(0);
   const refresh = useCallback(async () => {
-    const [map, tags] = await Promise.all([
-      TagStore.getAllTagsMap(),
-      TagStore.getAllTags(),
-    ]);
-    setTagMap(map);
-    setAllTags(tags);
-    setIsLoading(false);
+    const request = ++sequence.current;
+    try {
+      const map = await TagStore.getAllTagsMap();
+      if (request === sequence.current) { setTagMap(map); setError(null); }
+    } catch (e) { if (request === sequence.current) setError(messageOf(e)); }
   }, []);
-
   useEffect(() => {
-    refresh();
+    void refresh();
+    const channel = new BroadcastChannel('notbadbookmark-tags');
+    channel.onmessage = refresh;
+    window.addEventListener('notbadbookmark-tags', refresh);
+    // This ref is a request generation counter, not a DOM element. Invalidate in-flight reads.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    return () => { ++sequence.current; channel.close(); window.removeEventListener('notbadbookmark-tags', refresh); };
   }, [refresh]);
-
-  const getTags = useCallback((bookmarkId: string) => tagMap[bookmarkId] ?? [], [tagMap]);
-
-  const setTags = useCallback(
-    async (bookmarkId: string, tags: string[]) => {
-      await TagStore.setTags(bookmarkId, tags);
-      await refresh();
-    },
-    [refresh]
-  );
-
-  const addTag = useCallback(
-    async (bookmarkId: string, tag: string) => {
-      await TagStore.addTag(bookmarkId, tag);
-      await refresh();
-    },
-    [refresh]
-  );
-
-  const removeTag = useCallback(
-    async (bookmarkId: string, tag: string) => {
-      await TagStore.removeTag(bookmarkId, tag);
-      await refresh();
-    },
-    [refresh]
-  );
-
-  // Drop tag records whose bookmarks have been deleted, then re-sync.
-  const prune = useCallback(
-    async (validIds: string[]) => {
-      await TagStore.pruneTags(validIds);
-      await refresh();
-    },
-    [refresh]
-  );
-
-  return { tagMap, allTags, isLoading, getTags, setTags, addTag, removeTag, prune, refresh };
+  const counts = new Map<string, TagSummary>();
+  for (const tags of Object.values(tagMap)) for (const tag of tags) {
+    const key = tag.toLowerCase(), entry = counts.get(key);
+    counts.set(key, { tag: entry?.tag || tag, count: (entry?.count || 0) + 1 });
+  }
+  return { tagMap, error, allTags: Array.from(counts.values()).sort((a,b) => a.tag.localeCompare(b.tag)), refresh };
 }

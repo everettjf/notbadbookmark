@@ -32,7 +32,7 @@ function openDb(): Promise<IDBDatabase> {
       }
     };
     request.onsuccess = () => resolve(request.result);
-    request.onerror = () => reject(request.error);
+    request.onerror = () => { dbPromise = null; reject(request.error); };
   });
   return dbPromise;
 }
@@ -72,14 +72,42 @@ export class TagStore {
   }
 
   static async setTags(bookmarkId: string, tags: string[]): Promise<void> {
+    await TagStore.setMany({ [bookmarkId]: tags });
+  }
+
+  static async setMany(map: TagMap): Promise<void> {
+    if (!Object.keys(map).length) return;
     const db = await openDb();
-    const normalized = normalizeTags(tags);
-    const objectStore = store(db, 'readwrite');
-    if (normalized.length === 0) {
-      await toPromise(objectStore.delete(bookmarkId));
-    } else {
-      await toPromise(objectStore.put({ bookmarkId, tags: normalized } satisfies TagRecord));
-    }
+    await new Promise<void>((resolve, reject) => {
+      const tx = db.transaction(STORE, 'readwrite');
+      tx.oncomplete = () => { announceTags(); resolve(); };
+      tx.onabort = () => reject(tx.error || new Error('Tag changes could not be saved'));
+      tx.onerror = () => reject(tx.error || new Error('Tag changes could not be saved'));
+      for (const [bookmarkId, tags] of Object.entries(map)) {
+        const normalized = normalizeTags(tags);
+        if (normalized.length) tx.objectStore(STORE).put({ bookmarkId, tags: normalized });
+        else tx.objectStore(STORE).delete(bookmarkId);
+      }
+    });
+  }
+
+  static async renameTag(oldName: string, newName: string): Promise<void> {
+    const db = await openDb();
+    await new Promise<void>((resolve, reject) => {
+      const tx = db.transaction(STORE, 'readwrite');
+      tx.oncomplete = () => { announceTags(); resolve(); };
+      tx.onabort = () => reject(tx.error || new Error('Tag rename failed'));
+      tx.onerror = () => reject(tx.error || new Error('Tag rename failed'));
+      const cursor = tx.objectStore(STORE).openCursor();
+      cursor.onsuccess = () => {
+        const row = cursor.result;
+        if (!row) return;
+        const record = row.value as TagRecord;
+        const tags = normalizeTags(record.tags.map(t => t.toLowerCase() === oldName.toLowerCase() ? newName : t));
+        if (tags.length) row.update({ ...record, tags }); else row.delete();
+        row.continue();
+      };
+    });
   }
 
   static async addTag(bookmarkId: string, tag: string): Promise<void> {
@@ -130,22 +158,16 @@ export class TagStore {
     return ids.map((id) => String(id));
   }
 
-  static async removeBookmark(bookmarkId: string): Promise<void> {
-    const db = await openDb();
-    await toPromise(store(db, 'readwrite').delete(bookmarkId));
+  static async removeBookmark(bookmarkId: string): Promise<void> { await TagStore.setTags(bookmarkId, []); }
+
+  static async pruneTags(validIds: string[]): Promise<void> {
+    const map = await TagStore.getAllTagsMap();
+    const valid = new Set(validIds);
+    const stale: TagMap = {};
+    for (const id of Object.keys(map)) if (!valid.has(id)) stale[id] = [];
+    if (Object.keys(stale).length) await TagStore.setMany(stale);
   }
 
-  // Drop tag records for bookmarks that no longer exist. All deletes are issued
-  // synchronously so they share one live transaction.
-  static async pruneTags(validIds: string[]): Promise<void> {
-    const db = await openDb();
-    const valid = new Set(validIds);
-    const keys = await toPromise<IDBValidKey[]>(store(db, 'readonly').getAllKeys());
-    const stale = keys.filter((key) => !valid.has(String(key)));
-    if (stale.length === 0) return;
-    const objectStore = store(db, 'readwrite');
-    await Promise.all(stale.map((key) => toPromise(objectStore.delete(key))));
-  }
 }
 
 /**
@@ -169,4 +191,11 @@ export function filterByTags<T extends { id: string }>(
       ? selected.every((tag) => tags.includes(tag))
       : selected.some((tag) => tags.includes(tag));
   });
+}
+
+function announceTags() {
+  window.dispatchEvent(new Event('notbadbookmark-tags'));
+  const channel = new BroadcastChannel('notbadbookmark-tags');
+  channel.postMessage('changed');
+  channel.close();
 }

@@ -1,6 +1,6 @@
 import React from 'react';
 import { useDroppable } from '@dnd-kit/core';
-import { BookmarkNode } from '@/lib/bookmarks';
+import { BookmarkNode, canEdit, canContain } from '@/lib/bookmarks';
 import { Card } from '@/components/ui/card';
 import {
   ContextMenu,
@@ -29,10 +29,10 @@ function FolderItemComponent({ folder, onFolderSelect, onEdit, onDelete, classNa
   const bookmarkCount = folder.children?.filter(child => child.url).length || 0;
   const subfolderCount = folder.children?.filter(child => !child.url).length || 0;
 
-  const { setNodeRef, isOver } = useDroppable({ id: `folder:${folder.id}` });
+  const { setNodeRef, isOver } = useDroppable({ id: `folder:${folder.id}`, disabled: !canContain(folder) });
 
   return (
-    <div ref={setNodeRef} className="transition-transform duration-200 hover:scale-[1.01] active:scale-[0.99]">
+    <div ref={setNodeRef} className="transition-colors">
       <ContextMenu>
         <ContextMenuTrigger asChild>
           <Card
@@ -45,6 +45,8 @@ function FolderItemComponent({ folder, onFolderSelect, onEdit, onDelete, classNa
                 : "hover:bg-accent/60",
               className
             )}
+            role="button" tabIndex={0} title={folder.title}
+            onKeyDown={e => { if (e.key === 'F2' && canEdit(folder)) { e.preventDefault(); onEdit?.(folder); } else if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); handleClick(); } }}
             onClick={handleClick}
           >
             <div className="flex items-center gap-2">
@@ -88,12 +90,13 @@ function FolderItemComponent({ folder, onFolderSelect, onEdit, onDelete, classNa
           
           <ContextMenuSeparator />
           
-          <ContextMenuItem onClick={() => onEdit?.(folder)}>
+          <ContextMenuItem disabled={!canEdit(folder)} onClick={() => onEdit?.(folder)}>
             <Edit className="h-4 w-4 mr-2" />
             Rename
           </ContextMenuItem>
           
           <ContextMenuItem 
+            disabled={!canEdit(folder)}
             onClick={() => onDelete?.(folder)}
             className="text-destructive focus:text-destructive"
           >
