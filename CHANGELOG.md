@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.1.1 — 2026-09-24
+
+- Refine light/dark surfaces with neutral backgrounds and a muted teal default accent.
+- Add distinct sidebar selection, bookmark selection and theme-aware search highlights.
+- Calibrate all six accent variants in both modes; add text contrast regression coverage.
+
 ## 1.1.0 — 2026-09-24
 
 - Make bookmark edits, moves and failures explicit; preserve failed form input and prevent repeated submissions.

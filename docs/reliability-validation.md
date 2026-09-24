@@ -36,3 +36,7 @@ Chrome bookmarks and IndexedDB/storage are not one atomic transaction. Restores 
 ## Deferred scope
 
 Saved searches, advanced query syntax, webpage full-text search, AI classification and dead-link scanning are future work. No Chrome Web Store upload or external publication was performed for this implementation.
+
+## Color refinement — 1.1.1
+
+Default light and dark themes visually checked in the synthetic browser preview. Added 12 token contrast tests (six accents × two modes), covering primary/body/secondary text, action labels, destructive labels and selected-folder text at 4.5:1 or higher for the tested combinations. This is targeted contrast validation, not a full accessibility audit.

@@ -176,12 +176,12 @@ export function BookmarkManager() {
 
   return <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={dragEnd}>
     <div className="h-full flex bg-background text-foreground">
-      {sidebarOpen && <aside aria-label="Folders" className="w-56 min-w-40 max-w-[35vw] border-r overflow-auto resize-x"><h2 className="p-3 text-sm font-semibold">Folders</h2><FolderTree folders={folders} selectedFolder={selectedFolder} onFolderSelect={navigate}
+      {sidebarOpen && <aside aria-label="Folders" className="folder-sidebar w-56 min-w-40 max-w-[35vw] border-r overflow-auto resize-x"><h2 className="p-3 text-sm font-semibold">Folders</h2><FolderTree folders={folders} selectedFolder={selectedFolder} onFolderSelect={navigate}
         onEditFolder={f => { setEditingFolder(f); setFolderOpen(true); }} onDeleteFolder={f => { setOperationError(''); setDeleteItems([f]); }} /></aside>}
       <main className="flex-1 min-w-0 flex flex-col">
-        <header className="border-b p-3 space-y-3">
+        <header className="workspace-header border-b p-3 space-y-3">
           <div className="flex flex-wrap gap-2 items-center"><Button variant="ghost" aria-label="Toggle folder sidebar" onClick={() => setSidebarOpen(!sidebarOpen)}>☰</Button><h1 className="font-semibold mr-auto">NotBadBookmark</h1><ThemeToggle /></div>
-          <div className="flex flex-wrap gap-2"><SearchBar value={query} onSearch={setQuery} /><input className="rounded border bg-background px-2 min-w-0" aria-label="Filter by domain" placeholder="Domain filter…" value={domain} onChange={e => setDomain(e.target.value)} />
+          <div className="flex flex-wrap gap-2"><SearchBar value={query} onSearch={setQuery} /><input className="rounded border border-input bg-background px-2 min-w-0 placeholder:text-muted-foreground" aria-label="Filter by domain" placeholder="Domain filter…" value={domain} onChange={e => setDomain(e.target.value)} />
             <TagFilter allTags={visibleTags} selected={selectedTags} onChange={setSelectedTags} />
             {selectedTags.length > 0 && <select aria-label="Tag matching" className="border rounded bg-background" value={matchAll ? 'all' : 'any'} onChange={e => setMatchAll(e.target.value === 'all')}><option value="all">All tags</option><option value="any">Any tag</option></select>}
           </div>

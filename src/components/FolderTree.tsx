@@ -67,7 +67,7 @@ function FolderItem({
             onKeyDown={e => { if (e.target === e.currentTarget && (e.key === 'Enter' || e.key === ' ')) { e.preventDefault(); handleClick(); } }}
             className={cn(
               "w-full justify-start text-left font-normal h-auto py-1 px-2 rounded-md",
-              isSelected && "bg-accent text-accent-foreground",
+              isSelected && "folder-selected",
               isOver && "ring-2 ring-primary bg-primary/10",
               "hover:bg-accent/50"
             )}
@@ -171,7 +171,7 @@ export function FolderTree({ folders, selectedFolder, onFolderSelect, onEditFold
         variant="ghost"
         className={cn(
           "w-full justify-start text-left font-normal h-auto py-1 px-2 mb-1 rounded-md",
-          selectedFolder === null && "bg-accent text-accent-foreground",
+          selectedFolder === null && "folder-selected",
           "hover:bg-accent/50"
         )}
         onClick={() => onFolderSelect(null)}

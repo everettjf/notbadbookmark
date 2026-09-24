@@ -85,7 +85,7 @@ export function DraggableBookmarkItem({
             onShare={onShare}
             onCopy={onCopy}
             className={`${isDragging ? 'ring-2 ring-primary' : ''} ${
-              isSelected ? 'ring-2 ring-primary bg-primary/5' : ''
+              isSelected ? 'bookmark-selected ring-1 ring-primary' : ''
             } ${isSelectionMode ? 'pl-8' : ''}`}
             isDragHandle={!isSelectionMode && !disabled}
             dragHandleProps={isSelectionMode ? {} : { ...attributes, ...listeners }}
