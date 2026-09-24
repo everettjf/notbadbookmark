@@ -108,7 +108,7 @@ export class ImportExportService {
     const walk = (ns: PortableNode[], level: number): string => ns.map(n => n.url !== undefined
       ? `${'  '.repeat(level)}- [${label(n.title)}](<${n.url.replace(/[<>\s]/g, c => encodeURIComponent(c))}>)\n`
       : `${'  '.repeat(level)}- **${label(n.title)}**\n${walk(n.children || [], level + 1)}`).join('');
-    return '# NotBadBookmark Export\n\nReading copy; use JSON for a full backup.\n\n' + walk(nodes, 0);
+    return '# NotbadBookmark Export\n\nReading copy; use JSON for a full backup.\n\n' + walk(nodes, 0);
   }
   static async downloadBookmarks(format: 'json' | 'html' | 'markdown', nodes?: BookmarkNode[], scope = 'all', snapshotTags?: TagMap): Promise<void> {
     const data = exportTree(nodes || await BookmarkService.getAllBookmarks(), snapshotTags || await TagStore.getAllTagsMap());

@@ -1,7 +1,7 @@
 # Chrome扩展发布指南
 
 ## 概述
-本指南将帮助你将NotBadBookmark扩展发布到Chrome Web Store。
+本指南将帮助你将NotbadBookmark扩展发布到Chrome Web Store。
 
 ## 准备工作
 
@@ -11,7 +11,7 @@
 - 完成开发者账户验证
 
 ### 2. 扩展包准备
-✅ 已完成：`NotBadBookmark-v1.0.0.zip` (292.9 KB)
+✅ 已完成：`NotbadBookmark-v1.0.0.zip` (292.9 KB)
 
 ## 发布步骤
 
@@ -23,16 +23,16 @@
 ### 第二步：创建新项目
 1. 点击"添加新项目"
 2. 选择"Chrome扩展程序"
-3. 上传 `NotBadBookmark-v1.0.0.zip` 文件
+3. 上传 `NotbadBookmark-v1.0.0.zip` 文件
 
 ### 第三步：填写扩展信息
 
 #### 基本信息
-- **扩展名称**: NotBadBookmark
+- **扩展名称**: NotbadBookmark
 - **简短描述**: A better bookmark manager for Chrome with modern UI and enhanced features
-- **详细描述**: 
+- **详细描述**:
 ```
-NotBadBookmark is a modern, feature-rich bookmark manager that replaces Chrome's default bookmark interface. 
+NotbadBookmark is a modern, feature-rich bookmark manager that replaces Chrome's default bookmark interface.
 
 Features:
 • Beautiful, intuitive user interface
@@ -43,7 +43,7 @@ Features:
 • Dark/light theme support
 • Responsive design for all screen sizes
 
-Transform your bookmark management experience with NotBadBookmark!
+Transform your bookmark management experience with NotbadBookmark!
 ```
 
 #### 分类信息
@@ -59,9 +59,9 @@ Transform your bookmark management experience with NotBadBookmark!
 由于扩展需要访问书签数据，需要提供隐私政策：
 
 ```
-Privacy Policy for NotBadBookmark
+Privacy Policy for NotbadBookmark
 
-NotBadBookmark is a Chrome extension that helps you manage your bookmarks more effectively.
+NotbadBookmark is a Chrome extension that helps you manage your bookmarks more effectively.
 
 Data Collection:
 - We do not collect, store, or transmit any personal data

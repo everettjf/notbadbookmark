@@ -5,7 +5,7 @@ const { execSync } = require('child_process');
 
 const packageJson = JSON.parse(fs.readFileSync('package.json', 'utf8'));
 const version = packageJson.version;
-const zipName = `NotBadBookmark-v${version}.zip`;
+const zipName = `NotbadBookmark-v${version}.zip`;
 const releaseDir = 'release';
 
 // Files/dirs that make up the shipped extension (canonical sources).

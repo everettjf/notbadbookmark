@@ -1,12 +1,12 @@
-# Privacy Policy for NotBadBookmark
+# Privacy Policy for NotbadBookmark
 
 Effective date: September 24, 2026 (version 1.1.0).
 
-NotBadBookmark has no account, analytics, advertising, or developer-operated backend. The extension does not send bookmark titles, URLs, tags, or recovery snapshots to our servers. Website icons use local placeholders; this version does not request Google's favicon service.
+NotbadBookmark has no account, analytics, advertising, or developer-operated backend. The extension does not send bookmark titles, URLs, tags, or recovery snapshots to our servers. Website icons use local placeholders; this version does not request Google's favicon service.
 
 ## Storage and browser synchronization
 
-Bookmarks are read and written through Chrome's native bookmark store. Chrome may synchronize those bookmarks according to your browser and account settings. This is separate from NotBadBookmark's local metadata.
+Bookmarks are read and written through Chrome's native bookmark store. Chrome may synchronize those bookmarks according to your browser and account settings. This is separate from NotbadBookmark's local metadata.
 
 Tags are stored in the extension's IndexedDB database. UI preferences, deletion recovery snapshots (including titles, URLs, folder structure and tags), and recent import reports are stored in `chrome.storage.local`. They are not synchronized by this extension. Import reports retain the latest 20 operations. Recovery snapshots remain local until extension data is removed; export an independent JSON backup before clearing extension data or uninstalling.
 

@@ -1,4 +1,4 @@
-# NotBadBookmark
+# NotbadBookmark
 
 A local bookmark manager for Chrome, focused on reliable organization, search and portable backups. Replaces `chrome://bookmarks`.
 
