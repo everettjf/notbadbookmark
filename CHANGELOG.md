@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.1.3 — 2026-09-24
+
+- Replace the letter-based icon with a teal bookmark and checkmark across extension sizes and the product website.
+- Generate all artwork from one SVG source; keep extension permissions and data identifiers unchanged.
+
 ## 1.1.2 — 2026-09-24
 
 - Standardize the display name as NotbadBookmark across the extension and website.

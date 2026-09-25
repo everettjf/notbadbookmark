@@ -1,51 +1,20 @@
-<!DOCTYPE html>
-<html>
+<!doctype html>
+<html lang="en">
 <head>
-    <title>Icon Generator</title>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>NotbadBookmark icon preview</title>
+  <style>
+    body { margin: 48px; font: 16px system-ui; background: #f5f7f7; color: #173b38; }
+    .row { display: flex; align-items: center; gap: 32px; padding: 32px; margin: 24px 0; border-radius: 20px; }
+    .light { background: white; } .dark { background: #182324; color: #f5f7f7; }
+    figure { margin: 0; text-align: center; } figcaption { margin-top: 12px; font-size: 12px; }
+  </style>
 </head>
 <body>
-    <canvas id="canvas" width="128" height="128"></canvas>
-    <script>
-        const canvas = document.getElementById('canvas');
-        const ctx = canvas.getContext('2d');
-        
-        // Create icon
-        function createIcon(size) {
-            canvas.width = size;
-            canvas.height = size;
-            
-            // Background
-            ctx.fillStyle = '#3B82F6';
-            ctx.roundRect(0, 0, size, size, size * 0.1875);
-            ctx.fill();
-            
-            // Bookmark shape
-            const margin = size * 0.25;
-            const bookmarkWidth = size * 0.5;
-            const bookmarkHeight = size * 0.5;
-            
-            ctx.fillStyle = 'white';
-            ctx.beginPath();
-            ctx.moveTo(margin, margin);
-            ctx.lineTo(margin + bookmarkWidth, margin);
-            ctx.lineTo(margin + bookmarkWidth, margin + bookmarkHeight);
-            ctx.lineTo(margin + bookmarkWidth * 0.5, margin + bookmarkHeight * 0.75);
-            ctx.lineTo(margin, margin + bookmarkHeight);
-            ctx.closePath();
-            ctx.fill();
-            
-            return canvas.toDataURL('image/png');
-        }
-        
-        // Generate icons
-        const sizes = [16, 32, 48, 128];
-        sizes.forEach(size => {
-            const dataUrl = createIcon(size);
-            const link = document.createElement('a');
-            link.download = `icon${size}.png`;
-            link.href = dataUrl;
-            link.click();
-        });
-    </script>
+  <h1>NotbadBookmark</h1>
+  <p>Canonical artwork: icons/source.svg. Regenerate PNGs with node generate-icons.js.</p>
+  <div class="row light"><figure><img src="icons/icon128.png" width="128" height="128" alt="Teal bookmark with a checkmark"><figcaption>128 px</figcaption></figure><figure><img src="icons/icon48.png" width="48" height="48" alt=""><figcaption>48 px</figcaption></figure><figure><img src="icons/icon32.png" width="32" height="32" alt=""><figcaption>32 px</figcaption></figure><figure><img src="icons/icon16.png" width="16" height="16" alt=""><figcaption>16 px</figcaption></figure></div>
+  <div class="row dark"><img src="icons/icon128.png" width="128" height="128" alt="Icon on a dark background"><img src="icons/icon48.png" width="48" height="48" alt=""><img src="icons/icon32.png" width="32" height="32" alt=""><img src="icons/icon16.png" width="16" height="16" alt=""></div>
 </body>
 </html>
