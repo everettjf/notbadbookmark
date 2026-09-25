@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.1.4 — 2026-09-24
+
+- Restore the original green background and white NB lettering, adding rounded corners only.
+
 ## 1.1.3 — 2026-09-24
 
 - Replace the letter-based icon with a teal bookmark and checkmark across extension sizes and the product website.
