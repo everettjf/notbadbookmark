@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "NotbadBookmark",
-  "version": "1.1.1",
+  "version": "1.1.2",
   "description": "A fast, private bookmark manager with folders, tags, drag-and-drop, search, import/export, and dark mode.",
   "permissions": [
     "bookmarks",

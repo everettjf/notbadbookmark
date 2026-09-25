@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.1.2 — 2026-09-24
+
+- Standardize the display name as NotbadBookmark across the extension and website.
+- Increment the package version for updating the existing Chrome Web Store listing; storage identifiers and permissions remain unchanged.
+
 ## 1.1.1 — 2026-09-24
 
 - Refine light/dark surfaces with neutral backgrounds and a muted teal default accent.
