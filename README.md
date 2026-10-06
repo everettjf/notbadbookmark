@@ -1,5 +1,7 @@
 # NotbadBookmark
 
+[Discord](https://discord.gg/eGzEaP6TzR)
+
 A local bookmark manager for Chrome, focused on reliable organization, search and portable backups. Replaces `chrome://bookmarks`.
 
 [Chrome Web Store](https://chromewebstore.google.com/detail/notbadbookmark/mablekconlhfomebomdjbohbjmgceana) · [Website](https://everettjf.github.io/NotBadBookmark/) · [Privacy](PRIVACY_POLICY.md)
